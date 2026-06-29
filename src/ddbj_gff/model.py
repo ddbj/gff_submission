@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 
 from Bio.SeqFeature import CompoundLocation, FeatureLocation
 
+from .errors import Diagnostic
+
 
 @dataclass
 class Span:
@@ -133,3 +135,52 @@ class Feature:
         if len(parts) == 1:
             return parts[0]
         return CompoundLocation(parts)
+
+
+@dataclass
+class GffDocument:
+    directives: list[Directive] = field(default_factory=list)
+    features: list[Feature] = field(default_factory=list)
+    feature_index: dict[str, Feature] = field(default_factory=dict)
+    roots: list[Feature] = field(default_factory=list)
+    fasta: dict | None = None
+    sequences: dict | None = None
+    diagnostics: list[Diagnostic] = field(default_factory=list)
+
+    def _directive(self, kind: str) -> Directive | None:
+        for d in self.directives:
+            if d.kind == kind:
+                return d
+        return None
+
+    @property
+    def gff_version(self) -> str | None:
+        d = self._directive("gff-version")
+        return d.value if d else None
+
+    @property
+    def insdc_gff_version(self) -> str | None:
+        d = self._directive("insdc-gff-version")
+        return d.value if d else None
+
+    @property
+    def species(self) -> int | None:
+        d = self._directive("species")
+        return d.value if d else None
+
+    @property
+    def sequence_regions(self) -> dict[str, tuple[int, int]]:
+        out: dict[str, tuple[int, int]] = {}
+        for d in self.directives:
+            if d.kind == "sequence-region" and d.value:
+                seqid, start, end = d.value
+                out[seqid] = (start, end)
+        return out
+
+    @property
+    def transl_table_map(self) -> dict | None:
+        d = self._directive("transl_table")
+        return d.value if d else None
+
+    def get(self, feature_id: str) -> Feature | None:
+        return self.feature_index.get(feature_id)
