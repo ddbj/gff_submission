@@ -35,6 +35,14 @@ def test_marchantia_converts_without_errors():
     # at least one entry with mRNA+CDS produced
     total_cds = sum(1 for e in mss.entries for f in e.features if f.key == "CDS")
     assert total_cds > 1000
+    # nonredundant default: all transcripts emit an mRNA; CDS is deduped per locus
+    total_mrna = sum(1 for e in mss.entries for f in e.features if f.key == "mRNA")
+    total_cds = sum(1 for e in mss.entries for f in e.features if f.key == "CDS")
+    assert total_mrna >= total_cds  # dedup never produces more CDS than mRNA
+    assert total_mrna > 20000       # all ~22k transcripts emit an mRNA
+    # miRNA genes produce ncRNA / precursor_RNA features
+    rna_keys = {f.key for e in mss.entries for f in e.features}
+    assert "ncRNA" in rna_keys and "precursor_RNA" in rna_keys
     # every CDS feature carries locus_tag, codon_start, product, transl_table
     for e in mss.entries:
         for f in e.features:
