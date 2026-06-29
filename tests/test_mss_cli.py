@@ -1,4 +1,3 @@
-from pathlib import Path
 from Bio import SeqIO  # noqa: F401  (ensures biopython importable)
 from ddbj_gff.mss.cli import main
 
@@ -30,3 +29,17 @@ def test_cli_writes_ann_and_fasta(tmp_path):
     assert "\tCDS\t1..9\tlocus_tag\tPFX_000010" in ann
     fasta = (tmp_path / "result.fasta").read_text()
     assert fasta.startswith(">chr1") and fasta.rstrip().endswith("//")
+
+
+def test_cli_missing_sequence_sets_error_exit_and_stderr(tmp_path, capsys):
+    # FASTA lacks chr1 -> convert emits a missing-sequence ERROR -> rc 1 + stderr summary
+    (tmp_path / "g.gff").write_text(GFF)
+    (tmp_path / "g.fa").write_text(">other\nACGTACGT\n")
+    (tmp_path / "c.toml").write_text(CONFIG)
+    (tmp_path / "common.tsv").write_text(COMMON)
+    out = tmp_path / "result"
+    rc = main(["--gff", str(tmp_path / "g.gff"), "--fasta", str(tmp_path / "g.fa"),
+               "--config", str(tmp_path / "c.toml"), "--common", str(tmp_path / "common.tsv"),
+               "--out", str(out)])
+    assert rc == 1
+    assert "ERROR" in capsys.readouterr().err

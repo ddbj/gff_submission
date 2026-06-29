@@ -23,7 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--strict", action="store_true")
     args = ap.parse_args(argv)
 
-    doc = parse(open(args.gff, encoding="ascii", errors="replace").read())
+    with open(args.gff, encoding="ascii", errors="replace") as fh:
+        doc = parse(fh.read())
     seqs = {rec.id: rec.seq for rec in SeqIO.parse(args.fasta, "fasta")}
     cfg, cfg_diags = load_config(args.config)
     common_rows = load_common(args.common)
