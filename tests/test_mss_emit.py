@@ -31,3 +31,21 @@ def test_emit_fasta_wrap_and_terminator():
     assert lines[2] == "A" * 60
     assert lines[3] == "A" * 10
     assert lines[4] == "//"
+
+
+def test_emit_ann_entry_name_resets_per_entry():
+    doc = MssDocument(
+        common_rows=[],
+        entries=[
+            MssEntry("chr1", [MssFeature("source", "1..10", [MssQualifier("organism", "X")])]),
+            MssEntry("chr2", [MssFeature("source", "1..20", [MssQualifier("organism", "X")])]),
+        ],
+    )
+    lines = emit_ann(doc).splitlines()
+    assert lines[0] == "chr1\tsource\t1..10\torganism\tX"
+    assert lines[1] == "chr2\tsource\t1..20\torganism\tX"  # entry name on chr2's first row too
+
+
+def test_emit_fasta_multi_entry():
+    out = emit_fasta({"chr1": "AAA", "chr2": "CCC"})
+    assert out.splitlines() == [">chr1", "AAA", "//", ">chr2", "CCC", "//"]
