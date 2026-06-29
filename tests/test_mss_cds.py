@@ -44,10 +44,12 @@ def test_five_prime_partial_no_start_codon():
 def test_codon_start_from_phase():
     genome = Seq("AAAAAAAAA")
     gene, mrna = mrna_with_cds([(1, 9)], strand="+", phase0=2)  # phase 2 -> codon_start 3
-    f = build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), [])
+    diags = []
+    f = build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), diags)
     q = {x.key: x.value for x in f.qualifiers}
     assert q["codon_start"] == "3"
     assert f.location.startswith("<")  # codon_start != 1 implies 5' partial
+    assert any(d.code == "translation-not-multiple-of-3" for d in diags)
 
 
 def test_product_protein_gene_default():
@@ -72,6 +74,14 @@ def test_internal_stop_diagnostic():
     diags = []
     build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), diags)
     assert any(d.code == "translation-internal-stop" for d in diags)
+
+
+def test_translation_no_start_diagnostic():
+    genome = Seq("TTGAAATAA")  # TTG in start_codons -> not 5' partial; translate -> "LK*" (no M start)
+    gene, mrna = mrna_with_cds([(1, 9)], strand="+", phase0=0)
+    diags = []
+    build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), diags)
+    assert any(d.code == "translation-no-start" for d in diags)
 
 
 def test_no_cds_returns_none_and_warns():

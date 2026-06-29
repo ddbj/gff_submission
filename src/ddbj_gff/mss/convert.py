@@ -139,7 +139,7 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
 
     cds_seq = extract_seq(spans, genome_seq)
     coding = str(cds_seq[codon_start - 1:]).upper()
-    first_codon = str(cds_seq[:3]).upper()
+    first_codon = coding[:3]
     last_codon = str(cds_seq[-3:]).upper()
     five_prime_partial = codon_start != 1 or first_codon not in table.start_codons
     three_prime_partial = last_codon not in table.stop_codons
@@ -148,7 +148,8 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
     if len(coding) % 3 != 0:
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-not-multiple-of-3",
                                       f"CDS {mrna.id!r} coding length not a multiple of 3"))
-    protein = str(Seq(coding).translate(table=table_id))
+    coding_full = coding[: len(coding) - len(coding) % 3]
+    protein = str(Seq(coding_full).translate(table=table_id))
     body = protein[:-1] if protein.endswith("*") else protein
     if "*" in body:
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-internal-stop",
