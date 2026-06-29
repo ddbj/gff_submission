@@ -74,3 +74,11 @@ def test_codon_start_derived_from_first_span_phase():
 def test_codon_start_none_for_non_cds():
     f = Feature("g", "s", "gene", [Span("c", 1, 9, "+")], {}, [])
     assert f.codon_start is None
+
+
+def test_ordered_spans_floats_none_part_to_end():
+    spans = [Span("c", 1, 10, "+", 0, part=None), Span("c", 100, 110, "+", 0, part=1)]
+    f = make_cds(spans)
+    ordered = f.ordered_spans()
+    assert ordered[0].part == 1
+    assert ordered[-1].part is None

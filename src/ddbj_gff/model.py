@@ -109,8 +109,8 @@ class Feature:
         if not spans:
             return spans
         if any(s.part is not None for s in spans):
-            return sorted(spans, key=lambda s: (s.part is None, s.part or 0))
-        if spans[0].strand == "-":
+            return sorted(spans, key=lambda s: (s.part is None, s.part if s.part is not None else 0))
+        if all(s.strand == "-" for s in spans):
             return sorted(spans, key=lambda s: s.start, reverse=True)
         return sorted(spans, key=lambda s: s.start)
 
