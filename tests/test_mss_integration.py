@@ -35,10 +35,9 @@ def test_marchantia_converts_without_errors():
     # at least one entry with mRNA+CDS produced
     total_cds = sum(1 for e in mss.entries for f in e.features if f.key == "CDS")
     assert total_cds > 1000
-    # every CDS feature carries locus_tag, codon_start, product
+    # every CDS feature carries locus_tag, codon_start, product, transl_table
     for e in mss.entries:
         for f in e.features:
             if f.key == "CDS":
                 keys = {q.key for q in f.qualifiers}
                 assert {"locus_tag", "codon_start", "product", "transl_table"} <= keys
-                break
