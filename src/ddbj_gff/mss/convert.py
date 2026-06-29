@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import re
 
+from Bio.Data import CodonTable
+from Bio.Seq import Seq
 from Bio.SeqFeature import (AfterPosition, BeforePosition, CompoundLocation,
                             FeatureLocation)
 from Bio.SeqIO.InsdcIO import _insdc_location_string
 
+from ..errors import Diagnostic, Severity
 from .config import MssConfig
 from .model import MssFeature, MssQualifier
 
@@ -103,3 +106,69 @@ def build_mrna_feature(mrna, gene, locus_tag: str, seqlen: int) -> MssFeature:
         quals.append(MssQualifier("gene", gene.gene))
     quals.append(_submitter_note(gene, mrna))
     return MssFeature("mRNA", location, quals)
+
+
+def _product(mrna, gene, cfg: MssConfig) -> str:
+    vals = mrna.attributes.get("product")
+    if vals:
+        return vals[0]
+    if gene.gene or mrna.gene:
+        name = gene.gene or mrna.gene
+        return f"protein {name}"
+    return cfg.product_default
+
+
+def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
+                      diagnostics: list) -> "MssFeature | None":
+    spans = collect_spans(mrna, "CDS")
+    if not spans:
+        diagnostics.append(Diagnostic(Severity.WARNING, None, "no-cds",
+                                      f"mRNA {mrna.id!r} has no CDS; skipped"))
+        return None
+    ordered = _ordered(spans)
+    phase = ordered[0].phase
+    codon_start = 1 if phase is None else phase + 1
+
+    # transl_table: CDS attribute wins, else config default
+    table_id = cfg.transl_table
+    for child in mrna.children:
+        if child.type == "CDS" and child.transl_table is not None:
+            table_id = child.transl_table
+            break
+    table = CodonTable.unambiguous_dna_by_id[table_id]
+
+    cds_seq = extract_seq(spans, genome_seq)
+    coding = str(cds_seq[codon_start - 1:]).upper()
+    first_codon = str(cds_seq[:3]).upper()
+    last_codon = str(cds_seq[-3:]).upper()
+    five_prime_partial = codon_start != 1 or first_codon not in table.start_codons
+    three_prime_partial = last_codon not in table.stop_codons
+
+    # translation validation (report only)
+    if len(coding) % 3 != 0:
+        diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-not-multiple-of-3",
+                                      f"CDS {mrna.id!r} coding length not a multiple of 3"))
+    protein = str(Seq(coding).translate(table=table_id))
+    body = protein[:-1] if protein.endswith("*") else protein
+    if "*" in body:
+        diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-internal-stop",
+                                      f"CDS {mrna.id!r} has an internal stop codon"))
+    if not five_prime_partial and not protein.startswith("M"):
+        diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-no-start",
+                                      f"CDS {mrna.id!r} does not start with M"))
+
+    seqlen = len(genome_seq)
+    location = build_insdc_location(spans, seqlen, five_prime_partial, three_prime_partial)
+    quals = [
+        MssQualifier("locus_tag", locus_tag),
+        MssQualifier("transl_table", str(table_id)),
+        MssQualifier("codon_start", str(codon_start)),
+        MssQualifier("product", _product(mrna, gene, cfg)),
+    ]
+    if gene.gene or mrna.gene:
+        quals.append(MssQualifier("gene", gene.gene or mrna.gene))
+    inference = mrna.attributes.get("inference")
+    if inference:
+        quals.append(MssQualifier("inference", inference[0]))
+    quals.append(_submitter_note(gene, mrna))
+    return MssFeature("CDS", location, quals)
