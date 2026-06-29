@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from io import StringIO
+
+from Bio import SeqIO
 
 from .attributes import parse_attributes
-from .errors import Diagnostic, Severity
-from .model import Directive, Span
+from .errors import Diagnostic, GffParseError, Severity
+from .model import Directive, Feature, GffDocument, Span
 
 _TAXID_RE = re.compile(r"id=(\d+)")
 
@@ -94,3 +97,86 @@ def parse_feature_line(
     fid = attrs.get("ID", [None])[0]
     parent_ids = list(attrs.get("Parent", []))
     return ParsedRow(fid, source, ftype, span, attrs, parent_ids, line_no)
+
+
+def _add_row(doc: GffDocument, row: ParsedRow) -> None:
+    if row.id is not None and row.id in doc.feature_index:
+        feat = doc.feature_index[row.id]
+        if feat.type != row.type:
+            doc.diagnostics.append(
+                Diagnostic(
+                    Severity.ERROR, row.line_no, "id-type-mismatch",
+                    f"ID {row.id!r} reused with different type ({feat.type} vs {row.type})",
+                )
+            )
+            doc.features.append(
+                Feature(row.id, row.source, row.type, [row.span], dict(row.attributes), list(row.parent_ids))
+            )
+            return
+        feat.spans.append(row.span)
+        return
+    feat = Feature(row.id, row.source, row.type, [row.span], dict(row.attributes), list(row.parent_ids))
+    doc.features.append(feat)
+    if row.id is not None:
+        doc.feature_index[row.id] = feat
+
+
+def _resolve_graph(doc: GffDocument) -> None:
+    for feat in doc.features:
+        for pid in feat.parent_ids:
+            parent = doc.feature_index.get(pid)
+            if parent is None:
+                doc.diagnostics.append(
+                    Diagnostic(Severity.WARNING, None, "dangling-parent",
+                               f"Parent {pid!r} not found for feature {feat.id!r}")
+                )
+                continue
+            parent.children.append(feat)
+            feat.parents.append(parent)
+    doc.roots = [f for f in doc.features if not f.parent_ids]
+
+
+def _parse_fasta(lines: list[str]) -> dict:
+    handle = StringIO("\n".join(lines))
+    return {rec.id: rec.seq for rec in SeqIO.parse(handle, "fasta")}
+
+
+def parse(text: str, *, strict: bool = False) -> GffDocument:
+    doc = GffDocument()
+    in_fasta = False
+    fasta_lines: list[str] = []
+    dropped_comments = 0
+
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        if in_fasta:
+            fasta_lines.append(line)
+            continue
+        if line == "":
+            continue
+        if line.startswith("#"):
+            if line.startswith(("##", "#!")) or line.strip() == "###":
+                directive = parse_directive(line)
+                doc.directives.append(directive)
+                if directive.kind == "FASTA":
+                    in_fasta = True
+            else:
+                dropped_comments += 1
+            continue
+        row = parse_feature_line(line, line_no, doc.diagnostics)
+        if row is not None:
+            _add_row(doc, row)
+
+    if fasta_lines:
+        doc.fasta = _parse_fasta(fasta_lines)
+    if dropped_comments:
+        doc.diagnostics.append(
+            Diagnostic(Severity.INFO, None, "dropped-comments", f"{dropped_comments} bare comment line(s) ignored")
+        )
+
+    _resolve_graph(doc)
+
+    if strict:
+        for d in doc.diagnostics:
+            if d.severity == Severity.ERROR:
+                raise GffParseError(d)
+    return doc
