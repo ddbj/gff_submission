@@ -1,0 +1,5 @@
+##gff-version 3
+##sequence-region NC_000913.3 1 4641652
+NC_000913.3	RefSeq	CDS	1547401	1550448	.	+	0	ID=cds-fdnG;Parent=gene-b1474;product=formate dehydrogenase N subunit alpha;transl_except=(pos:1547986..1547988%2Caa:Sec);transl_table=11
+NC_000913.3	RefSeq	CDS	492092	493375	.	+	0	ID=cds-dnaX;Parent=gene-b0470;exception=ribosomal slippage;transl_table=11
+NC_000913.3	RefSeq	CDS	493375	493386	.	+	0	ID=cds-dnaX;Parent=gene-b0470;exception=ribosomal slippage;transl_table=11

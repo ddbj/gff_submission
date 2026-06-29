@@ -1,0 +1,6 @@
+##gff-version 3
+##sequence-region AP025455.1 1 120306
+AP025455.1	DDBJ	gene	65903	66802	.	-	.	ID=gene-Mp_Cg00010;Name=rps12;exception=trans-splicing;is_ordered=true;locus_tag=Mp_Cg00010;part=1
+AP025455.1	DDBJ	gene	1	854	.	?	.	ID=gene-Mp_Cg00010;Name=rps12;exception=trans-splicing;is_ordered=true;locus_tag=Mp_Cg00010;part=2
+AP025455.1	DDBJ	intron	65903	66688	.	-	.	ID=id-Mp_Cg00010;Parent=gene-Mp_Cg00010;exception=trans-splicing;exon_number=1;number=1;part=1
+AP025455.1	DDBJ	intron	1	92	.	?	.	ID=id-Mp_Cg00010;Parent=gene-Mp_Cg00010;exception=trans-splicing;exon_number=1;number=1;part=2

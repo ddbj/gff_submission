@@ -1,0 +1,4 @@
+##gff-version 3
+##sequence-region NC_000913.3 1 5000
+NC_000913.3	RefSeq	region	1	5000	.	+	.	ID=NC_000913.3:1..5000;Is_circular=true
+NC_000913.3	RefSeq	CDS	4900	5200	.	+	0	ID=cds-origin;Parent=gene-origin;product=origin spanning

@@ -1,0 +1,6 @@
+##gff-version 3
+##sequence-region chr1 1 1000
+chr1	S	CDS	1	30	.	+	0	ID=c1;Parent=m1;protein_id=ACA05023.1
+##FASTA
+>c1
+MASIQQLVGRWRLV

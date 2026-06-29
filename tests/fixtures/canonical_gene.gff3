@@ -1,0 +1,9 @@
+##gff-version 3
+##sequence-region chr1 1 6000
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9823
+chr1	S	gene	456	5212	.	+	.	ID=gene_FABP5;gene=FABP5
+chr1	S	mRNA	456	616	.	+	.	ID=mRNA_FABP5;Parent=gene_FABP5
+chr1	S	mRNA	3103	3275	.	+	.	ID=mRNA_FABP5;Parent=gene_FABP5
+chr1	S	exon	456	616	.	+	.	ID=exon_FABP5;Parent=mRNA_FABP5;Note=number%3D1
+chr1	S	CDS	538	616	.	+	0	ID=CDS_FABP5;Parent=mRNA_FABP5;protein_id=ACA05023.1
+chr1	S	CDS	3103	3275	.	+	2	ID=CDS_FABP5;Parent=mRNA_FABP5;protein_id=ACA05023.1
