@@ -185,7 +185,7 @@ def _representative_mrna(gene, diagnostics):
         return None
     if len(mrnas) > 1:
         diagnostics.append(Diagnostic(Severity.WARNING, None, "multi-transcript",
-                                      f"gene {gene.id!r} has {len(mrnas)} transcripts; keeping the first"))
+                                      f"gene {gene.id!r} has {len(mrnas)} transcripts; keeping one representative transcript"))
     for m in mrnas:
         if m.id and m.id.endswith(".1"):
             return m
@@ -206,6 +206,7 @@ def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
             if s.seqid not in seen:
                 seen.append(s.seqid)
 
+    assigner = LocusTagAssigner.from_config(cfg)
     for seqid in seen:
         if seqid not in seqs:
             diagnostics.append(Diagnostic(Severity.ERROR, None, "missing-sequence",
@@ -214,12 +215,15 @@ def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
         genome_seq = seqs[seqid]
         features = [build_source_feature(seqid, len(genome_seq), cfg)]
         features.extend(assembly_gap_features(str(genome_seq), cfg))
-        assigner = LocusTagAssigner.from_config(cfg)
         genes = [f for f in doc.roots if f.type == "gene" and any(s.seqid == seqid for s in f.spans)]
         genes.sort(key=_span_start)
         for gene in genes:
             mrna = _representative_mrna(gene, diagnostics)
             if mrna is None:
+                continue
+            if not collect_spans(mrna, "exon") and not collect_spans(mrna, "CDS"):
+                diagnostics.append(Diagnostic(Severity.WARNING, None, "no-exon",
+                                              f"mRNA {mrna.id!r} has no exon or CDS; skipped"))
                 continue
             locus_tag = assigner.assign(gene)
             features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))

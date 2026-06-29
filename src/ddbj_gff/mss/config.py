@@ -69,6 +69,10 @@ def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
         gap_estimated_length=gap.get("estimated_length", "known"),
         product_default=product.get("default", "hypothetical protein"),
     )
+    for required in ("organism", "mol_type"):
+        if required not in source_qual:
+            diags.append(Diagnostic(Severity.WARNING, None, "source-missing-qualifier",
+                                    f"[source].{required} is recommended for DDBJ submission"))
     return cfg, diags
 
 

@@ -30,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     common_rows = load_common(args.common)
 
     mss, diags = convert(doc, seqs, cfg, common_rows, strict=args.strict)
-    diags = cfg_diags + diags
+    diags = list(doc.diagnostics) + cfg_diags + diags
 
     with open(f"{args.out}.ann", "w", encoding="ascii") as fh:
         fh.write(emit_ann(mss))

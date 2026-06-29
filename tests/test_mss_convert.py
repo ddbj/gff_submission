@@ -53,3 +53,37 @@ def test_multi_transcript_warns_and_keeps_first():
     # only one mRNA + one CDS kept
     keys = [f.key for f in mss.entries[0].features]
     assert keys.count("mRNA") == 1 and keys.count("CDS") == 1
+
+
+def test_locus_tag_unique_across_entries():
+    # two seqids, neither gene has a locus_tag attr -> counter must NOT restart per entry
+    gff = (
+        "##gff-version 3\n"
+        "chr1\tS\tgene\t1\t9\t.\t+\t.\tID=a\n"
+        "chr1\tS\tmRNA\t1\t9\t.\t+\t.\tID=a.1;Parent=a\n"
+        "chr1\tS\texon\t1\t9\t.\t+\t.\tID=ae;Parent=a.1\n"
+        "chr1\tS\tCDS\t1\t9\t.\t+\t0\tID=ac;Parent=a.1\n"
+        "chr2\tS\tgene\t1\t9\t.\t+\t.\tID=b\n"
+        "chr2\tS\tmRNA\t1\t9\t.\t+\t.\tID=b.1;Parent=b\n"
+        "chr2\tS\texon\t1\t9\t.\t+\t.\tID=be;Parent=b.1\n"
+        "chr2\tS\tCDS\t1\t9\t.\t+\t0\tID=bc;Parent=b.1\n"
+    )
+    doc = parse(gff)
+    seqs = {"chr1": Seq("ATGAAATAA"), "chr2": Seq("ATGAAATAA")}
+    mss, diags = convert(doc, seqs, cfg(), ["COMMON"])
+    tags = [q.value for e in mss.entries for f in e.features if f.key == "CDS"
+            for q in f.qualifiers if q.key == "locus_tag"]
+    assert tags == ["PFX_000010", "PFX_000020"]  # monotonic across entries, no duplicate
+
+
+def test_no_exon_no_cds_mrna_skipped():
+    gff = (
+        "##gff-version 3\n"
+        "chr1\tS\tgene\t1\t9\t.\t+\t.\tID=g\n"
+        "chr1\tS\tmRNA\t1\t9\t.\t+\t.\tID=g.1;Parent=g\n"  # no exon/CDS children
+    )
+    doc = parse(gff)
+    mss, diags = convert(doc, {"chr1": Seq("ATGAAATAA")}, cfg(), ["COMMON"])
+    assert any(d.code == "no-exon" for d in diags)
+    # no crash; the gene produced no mRNA/CDS features
+    assert all(f.key == "source" for e in mss.entries for f in e.features)

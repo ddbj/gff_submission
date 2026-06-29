@@ -51,3 +51,11 @@ def test_load_common_rejects_non_common(tmp_path):
     p.write_text("not common\n")
     with pytest.raises(GffParseError):
         load_common(str(p))
+
+
+def test_missing_recommended_source_qualifiers_warn(tmp_path):
+    p = tmp_path / "c.toml"
+    p.write_text('[source]\nstrain = "X"\n[locus_tag]\nprefix = "P"\n')  # no organism/mol_type
+    cfg, diags = load_config(str(p))
+    codes = [d.code for d in diags]
+    assert codes.count("source-missing-qualifier") == 2
