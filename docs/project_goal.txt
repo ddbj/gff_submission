@@ -1,0 +1,35 @@
+GFFからDDBJへの登録や、DDBJ Flat FileからのGFFへの変換ツールを開発することを目的とする。
+
+docs/INSDC GFF3 Specification は INSDC 交換形式のGFF3 仕様書である。定義されているものは交換形式であり、必ずしも登録用のGFFファイルの形式とは異なる。将来DDBJのflat fileから交換用GFF3への変換や、DDBJのデータベースから交換用GFFの出力が必要になることが想定される。
+
+- コーディング方針
+テスト駆動開発を行う。GFF3の仕様に沿ったテストケースを作成し、テストが通るようにコードを実装する。
+
+- 使用モジュール
+BioPythonを使用する。
+BiopythonのGFFモジュールはまだ公式にリリースされたものはないので使用しない。
+GFFをパースしオブジェクトに変換するためのモジュールを自作する。
+Biopythonは配列ファイルの読み書き、locationの扱いや、配列の切り出し・翻訳に利用する。
+
+- クラス設計
+GFFのFeatureを扱うクラスを作成
+GFFのID, Parent, Name などの属性を扱えるようにする。IDとParentの関係を記述できるようchildrenを保持するようにする。子Featureからもparentsを参照できた方が良いか。
+locationは複数のspanから構成される(複数exon)ことがあり、それぞれに start, end, strandを持つ。
+GFFのphaseはCDSのみに存在するが、codon_start から計算できるため phase 情報をクラスに持たせるかは要検討。
+"In the case of discontinuous features (i.e. a single feature that exists over multiple genomic locations) the same ID may appear on multiple lines. "という記述があるため、一つのFeatureが複数のIDを持つ場合がある。
+example/rice_cp のgffにはそのような例が含まれる。
+
+- GFF仕様
+Sequence Ontologyで定義されたGFF仕様 https://github.com/the-sequence-ontology/specifications/blob/master/gff3.md に従う
+
+- INSDC GFF3の特殊な記載例
+transl_except や trans_splicing (trans-splicing)が存在する場合にはGFFファイルにおいて特別な書き方を必要とする。
+ecoli には transl_exceptが含まれる
+rice_cpにはtrans_splicingが含まれる
+既存GFFの例はINSDC GFF3のcanonicalな書き方とは異なる方法で書かれているので注意を要する。
+
+- circular genomeにおける座標記載方法
+For features that cross the origin of a circular feature (e.g. most bacterial genomes, plasmids, and some viral genomes), the requirement for start to be less than or equal to end is satisfied by making end = the position of the end + the length of the landmark feature.
+
+- 実験的に生成した gff --> ddbj 登録ファイルの変換スクリプト
+/Users/tanizawa/projects/marchantia/assembly_hifi/annotation/ddbj_submission_hifi/ddbj_gff にレポジトリがある。README参照
