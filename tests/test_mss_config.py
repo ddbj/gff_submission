@@ -74,5 +74,6 @@ def test_transcript_mode_default_and_explicit(tmp_path):
 def test_invalid_transcript_mode_raises(tmp_path):
     p = tmp_path / "c.toml"
     p.write_text('[source]\norganism="O"\n[locus_tag]\nprefix="P"\n[transcript]\nmode="bogus"\n')
-    with pytest.raises(GffParseError):
+    with pytest.raises(GffParseError) as ei:
         load_config(str(p))
+    assert ei.value.diagnostic.code == "invalid-mode"

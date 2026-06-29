@@ -207,13 +207,16 @@ _RNA_MAP = {
     "tmRNA": "tmRNA",
 }
 
+_STRUCTURAL = {"exon", "CDS", "intron", "five_prime_UTR", "three_prime_UTR",
+               "start_codon", "stop_codon"}
+
 
 def build_noncoding_features(gene, locus_tag: str, seqlen: int, cfg) -> list:
     features = []
     for rna in gene.children:
-        feat_key = _RNA_MAP.get(rna.type)
-        if feat_key is None:
+        if rna.type in _STRUCTURAL:
             continue
+        feat_key = _RNA_MAP.get(rna.type, "misc_RNA")
         spans = collect_spans(rna, "exon") or rna.spans
         location = build_insdc_location(spans, seqlen)
         quals = [MssQualifier("locus_tag", locus_tag)]
@@ -243,9 +246,10 @@ def _set_submitter_transcripts(cds, gene, transcript_ids) -> None:
 def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> list:
     transcripts = [c for c in gene.children if c.type == "mRNA"]
     if not transcripts:
-        if not any(c.type in _RNA_MAP for c in gene.children):
+        rna_children = [c for c in gene.children if c.type not in _STRUCTURAL]
+        if not rna_children:
             diagnostics.append(Diagnostic(Severity.WARNING, None, "no-rna",
-                                          f"gene {gene.id!r} has no mRNA or recognized RNA child; skipped"))
+                                          f"gene {gene.id!r} has no mRNA or RNA child; skipped"))
             return []
         return build_noncoding_features(gene, assigner.assign(gene), len(genome_seq), cfg)
 

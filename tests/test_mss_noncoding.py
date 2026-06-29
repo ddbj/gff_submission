@@ -1,4 +1,3 @@
-from Bio.Seq import Seq
 from ddbj_gff.model import Feature, Span
 from ddbj_gff.mss.config import MssConfig
 from ddbj_gff.mss.convert import build_noncoding_features
@@ -31,4 +30,17 @@ def test_mirna_gene_maps_to_precursor_and_ncrna():
 def test_no_recognized_rna_children_returns_empty():
     gene = Feature("g", "S", "gene", [Span("chr1", 1, 9, "+")], {}, [])
     gene.children = []
+    assert build_noncoding_features(gene, "PFX_000010", 1000, cfg()) == []
+
+
+def test_unrecognized_rna_type_maps_to_misc_rna():
+    gene = Feature("g", "S", "gene", [Span("c", 1, 50, "+")], {}, [])
+    gene.children = [Feature("g.1", "S", "lnc_RNA", [Span("c", 1, 50, "+")], {}, [])]
+    feats = build_noncoding_features(gene, "PFX_000010", 1000, cfg())
+    assert [f.key for f in feats] == ["misc_RNA"]
+
+
+def test_structural_children_skipped():
+    gene = Feature("g", "S", "gene", [Span("c", 1, 50, "+")], {}, [])
+    gene.children = [Feature("e", "S", "exon", [Span("c", 1, 50, "+")], {}, [])]
     assert build_noncoding_features(gene, "PFX_000010", 1000, cfg()) == []

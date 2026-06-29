@@ -73,3 +73,23 @@ def test_gene_with_no_rna_or_mrna_warns():
     feats = build_gene_features(gene, "nonredundant", assigner(), Seq("A" * 9), cfg(), diags)
     assert feats == []
     assert any(d.code == "no-rna" for d in diags)
+
+
+def test_unrecognized_rna_gene_produces_misc_rna_not_no_rna():
+    gene = Feature("g", "S", "gene", [Span("c", 1, 50, "+")], {}, [])
+    gene.children = [Feature("g.1", "S", "lnc_RNA", [Span("c", 1, 50, "+")], {}, [])]
+    diags = []
+    feats = build_gene_features(gene, "nonredundant", assigner(), Seq("A" * 100), cfg(), diags)
+    assert [f.key for f in feats] == ["misc_RNA"]
+    assert not any(d.code == "no-rna" for d in diags)
+
+
+def test_transcript_without_exon_or_cds_skipped():
+    gene = Feature("g", "S", "gene", [Span("c", 1, 30, "+")], {}, [])
+    t = Feature("g.1", "S", "mRNA", [Span("c", 1, 30, "+")], {}, [])
+    t.children = []
+    gene.children = [t]
+    diags = []
+    feats = build_gene_features(gene, "full", assigner(), Seq("A" * 30), cfg(), diags)
+    assert feats == []
+    assert any(d.code == "no-exon" for d in diags)
