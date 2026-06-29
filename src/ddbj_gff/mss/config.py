@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from ..errors import Diagnostic, GffParseError, Severity
 
-_KNOWN_SECTIONS = {"source", "locus_tag", "cds", "assembly_gap", "product"}
+_KNOWN_SECTIONS = {"source", "locus_tag", "cds", "assembly_gap", "product", "transcript"}
 
 
 @dataclass
@@ -24,6 +24,7 @@ class MssConfig:
     gap_linkage_evidence: str = "align genus"
     gap_estimated_length: str = "known"
     product_default: str = "hypothetical protein"
+    transcript_mode: str = "nonredundant"
 
 
 def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
@@ -52,6 +53,11 @@ def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
     cds = data.get("cds", {})
     gap = data.get("assembly_gap", {})
     product = data.get("product", {})
+    transcript = data.get("transcript", {})
+    mode = transcript.get("mode", "nonredundant")
+    if mode not in ("minimal", "nonredundant", "full"):
+        raise GffParseError(Diagnostic(Severity.ERROR, None, "invalid-mode",
+                                       f"transcript mode {mode!r} must be one of minimal/nonredundant/full"))
 
     cfg = MssConfig(
         source=source_qual,
@@ -68,6 +74,7 @@ def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
         gap_linkage_evidence=gap.get("linkage_evidence", "align genus"),
         gap_estimated_length=gap.get("estimated_length", "known"),
         product_default=product.get("default", "hypothetical protein"),
+        transcript_mode=mode,
     )
     for required in ("organism", "mol_type"):
         if required not in source_qual:

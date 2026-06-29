@@ -59,3 +59,20 @@ def test_missing_recommended_source_qualifiers_warn(tmp_path):
     cfg, diags = load_config(str(p))
     codes = [d.code for d in diags]
     assert codes.count("source-missing-qualifier") == 2
+
+
+def test_transcript_mode_default_and_explicit(tmp_path):
+    p = tmp_path / "c.toml"
+    p.write_text('[source]\norganism="O"\nmol_type="genomic DNA"\n[locus_tag]\nprefix="P"\n')
+    cfg, _ = load_config(str(p))
+    assert cfg.transcript_mode == "nonredundant"
+    p.write_text('[source]\norganism="O"\nmol_type="genomic DNA"\n[locus_tag]\nprefix="P"\n[transcript]\nmode="full"\n')
+    cfg, _ = load_config(str(p))
+    assert cfg.transcript_mode == "full"
+
+
+def test_invalid_transcript_mode_raises(tmp_path):
+    p = tmp_path / "c.toml"
+    p.write_text('[source]\norganism="O"\n[locus_tag]\nprefix="P"\n[transcript]\nmode="bogus"\n')
+    with pytest.raises(GffParseError):
+        load_config(str(p))
