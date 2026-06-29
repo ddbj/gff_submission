@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from Bio.SeqFeature import CompoundLocation, FeatureLocation
+
 
 @dataclass
 class Span:
@@ -42,6 +44,8 @@ class Feature:
     parent_ids: list[str] = field(default_factory=list)
     children: list["Feature"] = field(default_factory=list, repr=False)
     parents: list["Feature"] = field(default_factory=list, repr=False)
+
+    _STRAND_MAP = {"+": 1, "-": -1}
 
     def _first(self, key: str) -> str | None:
         vals = self.attributes.get(key)
@@ -120,3 +124,12 @@ class Feature:
             return None
         phase = self.ordered_spans()[0].phase
         return None if phase is None else phase + 1
+
+    def to_biopython_location(self):
+        parts = []
+        for s in self.ordered_spans():
+            strand = self._STRAND_MAP.get(s.strand, 0)
+            parts.append(FeatureLocation(s.start - 1, s.end, strand=strand))
+        if len(parts) == 1:
+            return parts[0]
+        return CompoundLocation(parts)
