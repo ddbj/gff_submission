@@ -1,0 +1,22 @@
+COMMON	DBLINK		project	PRJDB16711
+			biosample	SAMD00647143
+chr1	source	1..60	organism	Marchantia polymorpha subsp. ruderalis
+			mol_type	genomic DNA
+			chromosome	1
+			ff_definition	@@[organism]@@ DNA, chromosome: @@[chromosome]@@
+	mRNA	<1..30	locus_tag	MPTK1_000010
+			gene	MpX
+			note	submitter_gene_id: g1, submitter_transcript_id: g1.1
+	CDS	1..9	locus_tag	MPTK1_000010
+			transl_table	1
+			codon_start	1
+			product	widget protein
+			gene	MpX
+			note	submitter_gene_id: g1, submitter_transcript_id: g1.1
+	mRNA	complement(40..>60)	locus_tag	PRE_999
+			note	submitter_gene_id: g2, submitter_transcript_id: g2.1
+	CDS	complement(49..60)	locus_tag	PRE_999
+			transl_table	1
+			codon_start	1
+			product	hypothetical protein
+			note	submitter_gene_id: g2, submitter_transcript_id: g2.1

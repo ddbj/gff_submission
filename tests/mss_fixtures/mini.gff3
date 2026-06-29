@@ -1,0 +1,10 @@
+##gff-version 3
+##sequence-region chr1 1 60
+chr1	S	gene	1	30	.	+	.	ID=g1;gene=MpX
+chr1	S	mRNA	1	30	.	+	.	ID=g1.1;Parent=g1;product=widget protein
+chr1	S	exon	1	30	.	+	.	ID=e1;Parent=g1.1
+chr1	S	CDS	1	9	.	+	0	ID=c1;Parent=g1.1
+chr1	S	gene	40	60	.	-	.	ID=g2;locus_tag=PRE_999
+chr1	S	mRNA	40	60	.	-	.	ID=g2.1;Parent=g2
+chr1	S	exon	40	60	.	-	.	ID=e2;Parent=g2.1
+chr1	S	CDS	49	60	.	-	0	ID=c3;Parent=g2.1
