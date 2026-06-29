@@ -184,3 +184,34 @@ class GffDocument:
 
     def get(self, feature_id: str) -> Feature | None:
         return self.feature_index.get(feature_id)
+
+    @staticmethod
+    def _directive_key(d: "Directive"):
+        v = d.value
+        if isinstance(v, dict):
+            v = tuple(sorted(v.items()))
+        elif isinstance(v, list):
+            v = tuple(v)
+        return (d.kind, v)
+
+    @staticmethod
+    def _feature_key(f: "Feature"):
+        return (
+            f.id,
+            f.type,
+            f.source,
+            tuple(sorted(s.sort_key() for s in f.spans)),
+            tuple(sorted((k, tuple(v)) for k, v in f.attributes.items())),
+            tuple(sorted(f.parent_ids)),
+            tuple(sorted(c.id for c in f.children if c.id)),
+            tuple(sorted(p.id for p in f.parents if p.id)),
+        )
+
+    def semantically_equals(self, other: "GffDocument") -> bool:
+        if {self._directive_key(d) for d in self.directives} != {
+            other._directive_key(d) for d in other.directives
+        }:
+            return False
+        return {self._feature_key(f) for f in self.features} == {
+            other._feature_key(f) for f in other.features
+        }
