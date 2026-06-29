@@ -196,6 +196,40 @@ def _span_start(feature) -> int:
     return min(s.start for s in feature.spans) if feature.spans else 0
 
 
+_RNA_MAP = {
+    "pre_miRNA": "precursor_RNA",
+    "miRNA": "ncRNA",
+    "ncRNA": "ncRNA",
+    "snRNA": "ncRNA",
+    "snoRNA": "ncRNA",
+    "tRNA": "tRNA",
+    "rRNA": "rRNA",
+    "tmRNA": "tmRNA",
+}
+
+
+def build_noncoding_features(gene, locus_tag: str, seqlen: int, cfg) -> list:
+    features = []
+    for rna in gene.children:
+        feat_key = _RNA_MAP.get(rna.type)
+        if feat_key is None:
+            continue
+        spans = collect_spans(rna, "exon") or rna.spans
+        location = build_insdc_location(spans, seqlen)
+        quals = [MssQualifier("locus_tag", locus_tag)]
+        if feat_key == "ncRNA":
+            quals.append(MssQualifier("ncRNA_class", rna.type if rna.type != "ncRNA" else "other"))
+        if rna.product:
+            quals.append(MssQualifier("product", rna.product))
+        if gene.gene or rna.gene:
+            quals.append(MssQualifier("gene", gene.gene or rna.gene))
+        for note_val in rna.note:
+            quals.append(MssQualifier("note", note_val))
+        quals.append(_submitter_note(gene, rna))
+        features.append(MssFeature(feat_key, location, quals))
+    return features
+
+
 def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
     diagnostics: list = []
     entries: list = []
