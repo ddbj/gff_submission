@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import re
+
 from Bio.SeqFeature import (AfterPosition, BeforePosition, CompoundLocation,
                             FeatureLocation)
 from Bio.SeqIO.InsdcIO import _insdc_location_string
+
+from .config import MssConfig
+from .model import MssFeature, MssQualifier
 
 _STRAND = {"+": 1, "-": -1}
 
@@ -48,3 +53,21 @@ def extract_seq(spans: list, genome_seq):
     locs = [FeatureLocation(s.start - 1, s.end, strand=bio) for s in ordered]
     compound = locs[0] if len(locs) == 1 else CompoundLocation(locs)
     return compound.extract(genome_seq)
+
+
+def build_source_feature(seqid: str, seqlen: int, cfg: MssConfig) -> MssFeature:
+    quals = [MssQualifier(k, v) for k, v in cfg.source.items()]
+    chromosome = None
+    if cfg.chromosome_pattern:
+        m = re.match(cfg.chromosome_pattern, seqid)
+        if m:
+            chromosome = m.group(1)
+    if chromosome is not None:
+        quals.append(MssQualifier("chromosome", chromosome))
+        if cfg.ff_def_chromosome:
+            quals.append(MssQualifier("ff_definition", cfg.ff_def_chromosome))
+    else:
+        quals.append(MssQualifier("submitter_seqid", seqid))
+        if cfg.ff_def_default:
+            quals.append(MssQualifier("ff_definition", cfg.ff_def_default))
+    return MssFeature("source", f"1..{seqlen}", quals)
