@@ -11,6 +11,8 @@ def test_encode_decode_reserved_roundtrip():
     enc = encode_value(raw)
     assert ";" not in enc and "=" not in enc and "," not in enc
     assert "%3B" in enc and "%3D" in enc and "%2C" in enc and "%25" in enc
+    assert "%26" in enc  # & encoded
+    assert "%09" in enc  # tab encoded
     assert decode_value(enc) == raw
 
 
