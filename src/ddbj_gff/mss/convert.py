@@ -8,9 +8,11 @@ from Bio.SeqFeature import (AfterPosition, BeforePosition, CompoundLocation,
                             FeatureLocation)
 from Bio.SeqIO.InsdcIO import _insdc_location_string
 
-from ..errors import Diagnostic, Severity
+from ..errors import Diagnostic, GffParseError, Severity
 from .config import MssConfig
-from .model import MssFeature, MssQualifier
+from .gaps import assembly_gap_features
+from .locus_tag import LocusTagAssigner
+from .model import MssDocument, MssEntry, MssFeature, MssQualifier
 
 _STRAND = {"+": 1, "-": -1}
 
@@ -173,3 +175,61 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
         quals.append(MssQualifier("inference", inference[0]))
     quals.append(_submitter_note(gene, mrna))
     return MssFeature("CDS", location, quals)
+
+
+def _representative_mrna(gene, diagnostics):
+    mrnas = [c for c in gene.children if c.type == "mRNA"]
+    if not mrnas:
+        diagnostics.append(Diagnostic(Severity.WARNING, None, "no-transcript",
+                                      f"gene {gene.id!r} has no mRNA; skipped"))
+        return None
+    if len(mrnas) > 1:
+        diagnostics.append(Diagnostic(Severity.WARNING, None, "multi-transcript",
+                                      f"gene {gene.id!r} has {len(mrnas)} transcripts; keeping the first"))
+    for m in mrnas:
+        if m.id and m.id.endswith(".1"):
+            return m
+    return mrnas[0]
+
+
+def _span_start(feature) -> int:
+    return min(s.start for s in feature.spans) if feature.spans else 0
+
+
+def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
+    diagnostics: list = []
+    entries: list = []
+    # seqids in first-appearance order from the GFF features
+    seen: list = []
+    for feat in doc.features:
+        for s in feat.spans:
+            if s.seqid not in seen:
+                seen.append(s.seqid)
+
+    for seqid in seen:
+        if seqid not in seqs:
+            diagnostics.append(Diagnostic(Severity.ERROR, None, "missing-sequence",
+                                          f"seqid {seqid!r} not found in FASTA; entry skipped"))
+            continue
+        genome_seq = seqs[seqid]
+        features = [build_source_feature(seqid, len(genome_seq), cfg)]
+        features.extend(assembly_gap_features(str(genome_seq), cfg))
+        assigner = LocusTagAssigner.from_config(cfg)
+        genes = [f for f in doc.roots if f.type == "gene" and any(s.seqid == seqid for s in f.spans)]
+        genes.sort(key=_span_start)
+        for gene in genes:
+            mrna = _representative_mrna(gene, diagnostics)
+            if mrna is None:
+                continue
+            locus_tag = assigner.assign(gene)
+            features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
+            cds = build_cds_feature(mrna, gene, locus_tag, genome_seq, cfg, diagnostics)
+            if cds is not None:
+                features.append(cds)
+        entries.append(MssEntry(seqid, features))
+
+    if strict:
+        for d in diagnostics:
+            if d.severity == Severity.ERROR:
+                raise GffParseError(d)
+    return MssDocument(common_rows, entries), diagnostics
