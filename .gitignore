@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+uv.lock
+
+# Large example data (kept out of git; small GFF/GB fixtures are tracked)
+examples/**/*.fa
+examples/**/*.fasta
+examples/**/*.gz
+examples/marchantia/MpTak1_v7.1.marpolbase.gff
+examples/arabidopsis/AT_chr1.gff3

@@ -1,0 +1,6 @@
+{
+  "name": "ddbj-gff",
+  "build": { "dockerfile": "../Dockerfile", "context": ".." },
+  "runArgs": ["--platform=linux/amd64"],
+  "postCreateCommand": "uv sync"
+}
