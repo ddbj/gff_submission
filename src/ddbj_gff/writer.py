@@ -5,7 +5,7 @@ from .model import Feature, GffDocument, Span
 
 
 def _fmt_score(score: float | None) -> str:
-    return "." if score is None else ("%g" % score)
+    return "." if score is None else repr(score)
 
 
 def _format_row(feat: Feature, span: Span) -> str:

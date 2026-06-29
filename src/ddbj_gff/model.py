@@ -208,6 +208,15 @@ class GffDocument:
         )
 
     def semantically_equals(self, other: "GffDocument") -> bool:
+        """Return True if other is semantically equal (order/whitespace ignored).
+
+        Intentional limitations (Phase 1 round-trip oracle):
+        - Compares the SET of directive keys and feature keys, so exact-duplicate
+          directives and exact-duplicate ID-less features collapse and are not counted.
+        - Does NOT compare the FASTA payload (peptide sequences); test FASTA fidelity separately.
+        - Attribute values are compared as an ORDERED tuple (stricter than a multiset);
+          this is safe because the writer preserves value order on round-trip.
+        """
         if {self._directive_key(d) for d in self.directives} != {
             other._directive_key(d) for d in other.directives
         }:

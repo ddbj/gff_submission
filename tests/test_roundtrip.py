@@ -38,3 +38,12 @@ def test_trans_splicing_structure_preserved():
 def test_discontinuous_cds_has_three_spans():
     text = (FIXTURES / "discontinuous_cds.gff3").read_text()
     assert len(parse(text).get("cds-ycf3").spans) == 3
+
+
+def test_peptide_fasta_payload_preserved():
+    text = (FIXTURES / "peptide_fasta.gff3").read_text()
+    once = parse(text)
+    twice = parse(write(once))
+    got = {k: str(v) for k, v in (twice.fasta or {}).items()}
+    want = {k: str(v) for k, v in (once.fasta or {}).items()}
+    assert got == want and want  # non-empty and preserved

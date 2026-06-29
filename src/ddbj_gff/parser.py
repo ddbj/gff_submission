@@ -28,7 +28,10 @@ def parse_directive(line: str) -> Directive:
     if name == "sequence-region":
         fields = rest.split()
         if len(fields) >= 3:
-            return Directive(raw, "sequence-region", (fields[0], int(fields[1]), int(fields[2])))
+            try:
+                return Directive(raw, "sequence-region", (fields[0], int(fields[1]), int(fields[2])))
+            except ValueError:
+                return Directive(raw, "sequence-region", None)
         return Directive(raw, "sequence-region", None)
     if name == "species":
         m = _TAXID_RE.search(rest)
@@ -113,6 +116,13 @@ def _add_row(doc: GffDocument, row: ParsedRow) -> None:
                 Feature(row.id, row.source, row.type, [row.span], dict(row.attributes), list(row.parent_ids))
             )
             return
+        if row.attributes != feat.attributes:
+            doc.diagnostics.append(
+                Diagnostic(
+                    Severity.WARNING, row.line_no, "attr-mismatch",
+                    f"row for ID {row.id!r} has attributes differing from the first row; keeping the first row's attributes",
+                )
+            )
         feat.spans.append(row.span)
         return
     feat = Feature(row.id, row.source, row.type, [row.span], dict(row.attributes), list(row.parent_ids))

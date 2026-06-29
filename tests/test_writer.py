@@ -1,3 +1,4 @@
+from ddbj_gff import parse
 from ddbj_gff.model import Directive, Feature, GffDocument, Span
 from ddbj_gff.writer import write
 
@@ -44,3 +45,10 @@ def test_score_and_phase_dot_when_none():
     row = [l for l in write(doc).splitlines() if l.startswith("c\t")][0]
     cols = row.split("\t")
     assert cols[5] == "." and cols[7] == "."
+
+
+def test_score_roundtrip_preserves_precision():
+    f = Feature("g", "S", "gene", [Span("c", 1, 9, "+", None, score=123456789.5)], {"ID": ["g"]}, [])
+    doc = GffDocument(features=[f])
+    once = parse(write(doc))
+    assert once.features[0].spans[0].score == 123456789.5

@@ -65,3 +65,17 @@ def test_peptide_fasta_loaded():
 def test_strict_raises_on_error_diagnostic():
     with pytest.raises(GffParseError):
         parse("too\tfew\tcols\n", strict=True)
+
+
+def test_id_type_mismatch_records_error_and_keeps_separate():
+    text = "chr1\tS\tgene\t1\t9\t.\t+\t.\tID=x\nchr1\tS\tmRNA\t1\t9\t.\t+\t.\tID=x\n"
+    doc = parse(text)
+    assert any(d.code == "id-type-mismatch" and d.severity == Severity.ERROR for d in doc.diagnostics)
+    assert len(doc.features) == 2  # not merged
+
+
+def test_attr_mismatch_on_aggregation_warns_and_aggregates():
+    text = "chr1\tS\tCDS\t1\t9\t.\t+\t0\tID=c;product=A\nchr1\tS\tCDS\t20\t29\t.\t+\t0\tID=c;product=B\n"
+    doc = parse(text)
+    assert any(d.code == "attr-mismatch" and d.severity == Severity.WARNING for d in doc.diagnostics)
+    assert len(doc.get("c").spans) == 2  # still aggregated into one feature
