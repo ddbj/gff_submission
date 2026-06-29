@@ -71,3 +71,35 @@ def build_source_feature(seqid: str, seqlen: int, cfg: MssConfig) -> MssFeature:
         if cfg.ff_def_default:
             quals.append(MssQualifier("ff_definition", cfg.ff_def_default))
     return MssFeature("source", f"1..{seqlen}", quals)
+
+
+def _submitter_note(gene, mrna) -> MssQualifier:
+    return MssQualifier(
+        "note", f"submitter_gene_id: {gene.id}, submitter_transcript_id: {mrna.id}")
+
+
+def mrna_partial_flags(mrna) -> tuple[bool, bool]:
+    exon = collect_spans(mrna, "exon")
+    cds = collect_spans(mrna, "CDS")
+    if not exon or not cds:
+        return (False, False)
+    exon_lo, exon_hi = min(s.start for s in exon), max(s.end for s in exon)
+    cds_lo, cds_hi = min(s.start for s in cds), max(s.end for s in cds)
+    strand = exon[0].strand
+    # no UTR on a genomic side -> that side is partial; map to 5'/3' by strand
+    left_partial = exon_lo == cds_lo
+    right_partial = exon_hi == cds_hi
+    if strand == "-":
+        return (right_partial, left_partial)   # 5' = genomic right on minus strand
+    return (left_partial, right_partial)
+
+
+def build_mrna_feature(mrna, gene, locus_tag: str, seqlen: int) -> MssFeature:
+    spans = collect_spans(mrna, "exon") or collect_spans(mrna, "CDS")
+    fp, tp = mrna_partial_flags(mrna)
+    location = build_insdc_location(spans, seqlen, fp, tp)
+    quals = [MssQualifier("locus_tag", locus_tag)]
+    if gene.gene:
+        quals.append(MssQualifier("gene", gene.gene))
+    quals.append(_submitter_note(gene, mrna))
+    return MssFeature("mRNA", location, quals)
