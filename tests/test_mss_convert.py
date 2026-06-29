@@ -48,11 +48,30 @@ def test_multi_transcript_warns_and_keeps_first():
     )
     doc = parse(gff)
     seqs = {"chr1": Seq("ATGAAATAA")}
-    mss, diags = convert(doc, seqs, cfg(), ["COMMON"])
+    c = cfg(); c.transcript_mode = "minimal"
+    mss, diags = convert(doc, seqs, c, ["COMMON"])
     assert any(d.code == "multi-transcript" for d in diags)
     # only one mRNA + one CDS kept
     keys = [f.key for f in mss.entries[0].features]
     assert keys.count("mRNA") == 1 and keys.count("CDS") == 1
+
+
+def test_convert_default_mode_is_nonredundant_keeps_all_transcripts():
+    gff = (
+        "##gff-version 3\n"
+        "chr1\tS\tgene\t1\t40\t.\t+\t.\tID=g\n"
+        "chr1\tS\tmRNA\t1\t30\t.\t+\t.\tID=g.1;Parent=g\n"
+        "chr1\tS\texon\t1\t30\t.\t+\t.\tID=e1;Parent=g.1\n"
+        "chr1\tS\tCDS\t1\t9\t.\t+\t0\tID=c1;Parent=g.1\n"
+        "chr1\tS\tmRNA\t1\t40\t.\t+\t.\tID=g.2;Parent=g\n"
+        "chr1\tS\texon\t1\t40\t.\t+\t.\tID=e2;Parent=g.2\n"
+        "chr1\tS\tCDS\t1\t9\t.\t+\t0\tID=c2;Parent=g.2\n"
+    )
+    doc = parse(gff)
+    mss, diags = convert(doc, {"chr1": Seq("ATGAAATAA" + "C" * 31)}, cfg(), ["COMMON"])
+    keys = [f.key for f in mss.entries[0].features]
+    assert keys == ["source", "mRNA", "mRNA", "CDS"]  # nonredundant: 2 mRNA, shared CDS once
+    assert not any(d.code == "multi-transcript" for d in diags)  # no warning in nonredundant
 
 
 def test_locus_tag_unique_across_entries():

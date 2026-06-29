@@ -308,18 +308,8 @@ def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
         genes = [f for f in doc.roots if f.type == "gene" and any(s.seqid == seqid for s in f.spans)]
         genes.sort(key=_span_start)
         for gene in genes:
-            mrna = _representative_mrna(gene, diagnostics)
-            if mrna is None:
-                continue
-            if not collect_spans(mrna, "exon") and not collect_spans(mrna, "CDS"):
-                diagnostics.append(Diagnostic(Severity.WARNING, None, "no-exon",
-                                              f"mRNA {mrna.id!r} has no exon or CDS; skipped"))
-                continue
-            locus_tag = assigner.assign(gene)
-            features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
-            cds = build_cds_feature(mrna, gene, locus_tag, genome_seq, cfg, diagnostics)
-            if cds is not None:
-                features.append(cds)
+            features.extend(build_gene_features(gene, cfg.transcript_mode, assigner,
+                                                genome_seq, cfg, diagnostics))
         entries.append(MssEntry(seqid, features))
 
     if strict:

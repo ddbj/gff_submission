@@ -20,6 +20,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", required=True)
     ap.add_argument("--common", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--mode", choices=["minimal", "nonredundant", "full"], default=None)
     ap.add_argument("--strict", action="store_true")
     args = ap.parse_args(argv)
 
@@ -27,6 +28,8 @@ def main(argv: list[str] | None = None) -> int:
         doc = parse(fh.read())
     seqs = {rec.id: rec.seq for rec in SeqIO.parse(args.fasta, "fasta")}
     cfg, cfg_diags = load_config(args.config)
+    if args.mode:
+        cfg.transcript_mode = args.mode
     common_rows = load_common(args.common)
 
     mss, diags = convert(doc, seqs, cfg, common_rows, strict=args.strict)

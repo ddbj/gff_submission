@@ -31,6 +31,18 @@ def test_cli_writes_ann_and_fasta(tmp_path):
     assert fasta.startswith(">chr1") and fasta.rstrip().endswith("//")
 
 
+def test_cli_mode_flag_overrides(tmp_path):
+    (tmp_path / "g.gff").write_text(GFF)
+    (tmp_path / "g.fa").write_text(FASTA)
+    (tmp_path / "c.toml").write_text(CONFIG)
+    (tmp_path / "common.tsv").write_text(COMMON)
+    out = tmp_path / "r"
+    rc = main(["--gff", str(tmp_path/"g.gff"), "--fasta", str(tmp_path/"g.fa"),
+               "--config", str(tmp_path/"c.toml"), "--common", str(tmp_path/"common.tsv"),
+               "--out", str(out), "--mode", "minimal"])
+    assert rc == 0  # GFF has a single transcript so output is identical, but --mode is accepted
+
+
 def test_cli_missing_sequence_sets_error_exit_and_stderr(tmp_path, capsys):
     # FASTA lacks chr1 -> convert emits a missing-sequence ERROR -> rc 1 + stderr summary
     (tmp_path / "g.gff").write_text(GFF)
