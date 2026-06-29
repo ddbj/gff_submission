@@ -38,3 +38,13 @@ def test_mrna_gene_qualifier_when_present():
     gene, mrna = build_gene_mrna([(1, 30)], [(11, 20)], strand="+", gene_attr={"gene": ["MpX"]})
     f = build_mrna_feature(mrna, gene, "PFX_000010", 10000)
     assert ("gene", "MpX") in [(q.key, q.value) for q in f.qualifiers]
+
+
+def test_mrna_partial_minus_strand_swap():
+    # minus strand: genomic-left (low coord) lacks UTR -> that is the biological 3' end.
+    # exon [(1,30),(40,70)] vs CDS [(1,30),(40,60)]: left_partial=True (exon_lo==cds_lo),
+    # right_partial=False (exon_hi 70 > cds_hi 60). On '-' strand -> (right, left) = (False, True).
+    gene, mrna = build_gene_mrna([(1, 30), (40, 70)], [(1, 30), (40, 60)], strand="-")
+    assert mrna_partial_flags(mrna) == (False, True)
+    f = build_mrna_feature(mrna, gene, "PFX_000010", 10000)
+    assert f.location == "complement(join(<1..30,40..70))"
