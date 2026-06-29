@@ -2,5 +2,6 @@
 
 from .model import Directive, Feature, GffDocument, Span
 from .parser import parse
+from .writer import write
 
-__all__ = ["parse", "GffDocument", "Feature", "Span", "Directive"]
+__all__ = ["parse", "write", "GffDocument", "Feature", "Span", "Directive"]
