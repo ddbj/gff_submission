@@ -230,6 +230,62 @@ def build_noncoding_features(gene, locus_tag: str, seqlen: int, cfg) -> list:
     return features
 
 
+def _set_submitter_transcripts(cds, gene, transcript_ids) -> None:
+    value = (f"submitter_gene_id: {gene.id}, "
+             f"submitter_transcript_id: {', '.join(transcript_ids)}")
+    for q in cds.qualifiers:
+        if q.key == "note" and q.value.startswith("submitter_gene_id:"):
+            q.value = value
+            return
+    cds.qualifiers.append(MssQualifier("note", value))
+
+
+def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> list:
+    transcripts = [c for c in gene.children if c.type == "mRNA"]
+    if not transcripts:
+        if not any(c.type in _RNA_MAP for c in gene.children):
+            diagnostics.append(Diagnostic(Severity.WARNING, None, "no-rna",
+                                          f"gene {gene.id!r} has no mRNA or recognized RNA child; skipped"))
+            return []
+        return build_noncoding_features(gene, assigner.assign(gene), len(genome_seq), cfg)
+
+    transcripts = sorted(transcripts, key=lambda m: m.id or "")
+    if mode == "minimal":
+        rep = _representative_mrna(gene, diagnostics)
+        transcripts = [rep] if rep is not None else []
+
+    features = []
+    locus_tag = None
+    cds_index = {}
+    cds_order = []
+    for mrna in transcripts:
+        if not collect_spans(mrna, "exon") and not collect_spans(mrna, "CDS"):
+            diagnostics.append(Diagnostic(Severity.WARNING, None, "no-exon",
+                                          f"mRNA {mrna.id!r} has no exon or CDS; skipped"))
+            continue
+        if locus_tag is None:
+            locus_tag = assigner.assign(gene)
+        features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
+        cds = build_cds_feature(mrna, gene, locus_tag, genome_seq, cfg, diagnostics)
+        if cds is None:
+            continue
+        if mode == "nonredundant":
+            if cds.location in cds_index:
+                cds_index[cds.location][1].append(mrna.id)
+            else:
+                cds_index[cds.location] = [cds, [mrna.id]]
+                cds_order.append(cds.location)
+        else:
+            features.append(cds)
+    if mode == "nonredundant":
+        for loc in cds_order:
+            cds, tids = cds_index[loc]
+            if len(tids) > 1:
+                _set_submitter_transcripts(cds, gene, tids)
+            features.append(cds)
+    return features
+
+
 def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
     diagnostics: list = []
     entries: list = []
