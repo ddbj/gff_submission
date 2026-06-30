@@ -1,0 +1,36 @@
+# Curated snapshot of common INSDC db_xref DBTAGs.
+# Source: https://www.insdc.org/submitting-standards/dbxref-qualifier-vocabulary/
+# This is a documented SUBSET; the dbxref-unknown-dbtag rule is WARN, so omissions are tolerable.
+GenBank
+RefSeq
+EMBL
+DDBJ
+UniProtKB/Swiss-Prot
+UniProtKB/TrEMBL
+GeneID
+GO
+InterPro
+PFAM
+Pfam
+RFAM
+Rfam
+EC
+ECOCYC
+ASAP
+taxon
+HGNC
+MGI
+FLYBASE
+SGD
+TAIR
+Araport
+Ensembl
+EnsEMBL
+miRBase
+PDB
+PubMed
+dbSNP
+ATCC
+CDD
+COG
+PMID
