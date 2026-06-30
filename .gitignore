@@ -6,6 +6,9 @@ __pycache__/
 *.egg-info/
 uv.lock
 
+# Pipeline trial outputs (generated artifacts, not tracked)
+pipeline_output/
+
 # Large example data (kept out of git; small GFF/GB fixtures are tracked)
 examples/**/*.fa
 examples/**/*.fasta
