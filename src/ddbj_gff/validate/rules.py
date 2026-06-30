@@ -72,3 +72,97 @@ def rule_start_gt_end(doc, vocab) -> list:
                 diags.append(make_diagnostic("start-gt-end",
                                              f"feature {f.id!r} has start>end ({s.start}>{s.end})"))
     return diags
+
+
+def rule_feature_type(doc, vocab) -> list:
+    diags = []
+    for f in doc.features:
+        if f.type not in vocab.feature_types:
+            diags.append(make_diagnostic("feature-type-not-insdc",
+                                         f"feature {f.id!r} type {f.type!r} is not an INSDC-supported "
+                                         f"SO term"))
+    return diags
+
+
+def rule_parents(doc, vocab) -> list:
+    diags = []
+    for f in doc.features:
+        if len(f.parent_ids) > 1:
+            diags.append(make_diagnostic("multiple-parents",
+                                         f"feature {f.id!r} has {len(f.parent_ids)} parents "
+                                         f"(INSDC allows a single parent per row)"))
+        for pid in f.parent_ids:
+            if pid not in doc.feature_index:
+                diags.append(make_diagnostic("dangling-parent",
+                                             f"feature {f.id!r} references missing Parent {pid!r}"))
+    return diags
+
+
+def rule_cds(doc, vocab) -> list:
+    diags = []
+    has_file_table = doc.transl_table_map is not None
+    for f in doc.features:
+        if f.type != "CDS":
+            continue
+        if f.transl_table is None and not has_file_table:
+            diags.append(make_diagnostic("cds-missing-transl-table",
+                                         f"CDS {f.id!r} lacks transl_table and no file-level "
+                                         f"#!transl_table is present"))
+        for s in f.spans:
+            if s.phase not in (0, 1, 2):
+                diags.append(make_diagnostic("cds-invalid-phase",
+                                             f"CDS {f.id!r} has invalid phase {s.phase!r}"))
+    return diags
+
+
+def rule_gene_locus_tag(doc, vocab) -> list:
+    diags = []
+    for f in doc.features:
+        if f.type == "gene" and not f.locus_tag:
+            diags.append(make_diagnostic("gene-missing-locus-tag",
+                                         f"gene {f.id!r} has no locus_tag"))
+    return diags
+
+
+def rule_dbxref(doc, vocab) -> list:
+    diags = []
+    for f in doc.features:
+        for xref in f.dbxref:
+            dbtag = xref.split(":", 1)[0]
+            if dbtag and dbtag not in vocab.dbxref_dbtags:
+                diags.append(make_diagnostic("dbxref-unknown-dbtag",
+                                             f"feature {f.id!r} Dbxref DBTAG {dbtag!r} is not in the "
+                                             f"INSDC vocabulary"))
+    return diags
+
+
+def rule_special_case(doc, vocab) -> list:
+    diags = []
+    for f in doc.features:
+        if f.is_trans_spliced and "location" not in f.attributes:
+            diags.append(make_diagnostic("noncanonical-special-case",
+                                         f"feature {f.id!r} uses non-canonical trans-splicing "
+                                         f"representation (no location= attribute)"))
+        if "transl_except" in f.attributes:
+            diags.append(make_diagnostic("noncanonical-special-case",
+                                         f"feature {f.id!r} uses transl_except attribute "
+                                         f"(canonical form is a recoded_codon child feature)"))
+        if "anticodon" in f.attributes:
+            diags.append(make_diagnostic("noncanonical-special-case",
+                                         f"feature {f.id!r} uses anticodon attribute "
+                                         f"(canonical form is an anticodon child feature)"))
+    return diags
+
+
+ALL_RULES = [
+    rule_directives,
+    rule_ascii,
+    rule_seqid_bounds,
+    rule_start_gt_end,
+    rule_feature_type,
+    rule_parents,
+    rule_cds,
+    rule_gene_locus_tag,
+    rule_dbxref,
+    rule_special_case,
+]
