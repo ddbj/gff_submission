@@ -65,3 +65,43 @@ def pass_directives(doc, ctx) -> list:
             changes.append(Change("add-directive", "transl_table", f"added #!transl_table primary:{n}"))
 
     return changes
+
+
+def _is_placeholder(qual: str) -> bool:
+    return "<" in qual or ">" in qual or "*" in qual
+
+
+def _qualifier_to_attr(qual: str) -> tuple[str, str | None]:
+    body = qual.lstrip("/")
+    if "=" in body:
+        key, val = body.split("=", 1)
+        return key.strip(), val.strip().strip('"')
+    return body.strip(), None  # valueless flag (e.g. /pseudo)
+
+
+def pass_so_terms(doc, ctx) -> list:
+    vocab = ctx.vocab
+    changes: list = []
+    for f in doc.features:
+        target = vocab.insdc_map.get(f.type)
+        if target is None:
+            changes.append(Change("unmapped-type", f.id or "?",
+                                  f"feature type {f.type!r} is not a known SO term; left unchanged"))
+            continue
+        if target == f.type:
+            continue
+        old = f.type
+        f.type = target
+        changes.append(Change("rename-type", f.id or "?", f"{old} -> {target}"))
+        for qual in vocab.feature_qualifiers.get(old, ()):
+            if _is_placeholder(qual):
+                changes.append(Change("needs-manual", f.id or "?",
+                                      f"qualifier {qual} for {old} needs a manual value (not added)"))
+                continue
+            key, val = _qualifier_to_attr(qual)
+            if key in f.attributes:
+                continue  # don't clobber existing
+            f.attributes[key] = [val if val is not None else "true"]
+            changes.append(Change("add-qualifier", f.id or "?",
+                                  f"added {key}={f.attributes[key][0]}"))
+    return changes
