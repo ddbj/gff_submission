@@ -70,7 +70,7 @@ src/ddbj_gff/normalize/
 | `#!insdc-gff-version <V>` | config `insdc_gff_version`（既定 `1.0.0`） | missing-insdc-gff-version |
 | `##species …?id=<taxid>` | config の `taxid`（任意）。未指定なら補完せず report に記録 | missing-species-taxid |
 | `##sequence-region <seqid> 1 <len>` | feature があり region 無い seqid ごと。len は FASTA があれば真の長さ、無ければ feature 最大 end の近似＋警告 | missing-sequence-region |
-| `#!transl_table primary:N` | file 先頭に既存無く transl_table を持たない CDS がある場合に追加。N=一貫した既存 CDS 値、無ければ config `transl_table`（既定 1） | cds-missing-transl-table |
+| `#!transl_table primary:N` | file 先頭に既存無く **CDS が存在する**場合に追加（INSDC canonical な file 先頭形式へ揃える。全 CDS が既に transl_table 属性を持つ場合も追加）。N=一貫した既存 CDS 値、無ければ config `transl_table`（既定 1） | cds-missing-transl-table |
 
 - `##species` は外部情報（taxid）が要るため、config 未指定なら誤推測せず未補完として report に明記。
 - `##sequence-region` の近似 fallback は、3A `feature-outside-region` を短い region で誤って消さないよう「近似」を必ず report に出す。

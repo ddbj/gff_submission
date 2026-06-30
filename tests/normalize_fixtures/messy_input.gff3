@@ -1,0 +1,4 @@
+##gff-version 3
+chr1	S	gene	100	900	.	+	.	ID=g1;locus_tag=ABC_000010
+chr1	S	coding_exon	100	900	.	+	.	ID=e1;Parent=g1
+chr1	S	pseudogenic_CDS	130	870	.	+	0	ID=c1;Parent=g1
