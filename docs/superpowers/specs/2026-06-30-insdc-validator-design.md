@@ -69,9 +69,11 @@ src/ddbj_gff/validate/
 
 **ヘッダ/ディレクティブ**: `missing-gff-version`(ERROR) / `missing-insdc-gff-version`(ERROR) / `missing-species-taxid`(ERROR) / `missing-sequence-region`(ERROR) / `duplicate-sequence-region`(ERROR)
 **エンコード**: `non-ascii`(ERROR)
-**座標/seqid**: `undefined-seqid`(ERROR) / `feature-outside-region`(ERROR、環状 is_circular の起点跨ぎは除外) / `start-gt-end-noncircular`(ERROR)
+**座標/seqid**: `undefined-seqid`(ERROR) / `feature-outside-region`(ERROR、環状 is_circular の起点跨ぎは除外) / `start-gt-end`(ERROR、start>end は環状でも不正なので無条件。Phase1 パーサも同名 code を WARNING で出す)
 **列3 / SO term**: `feature-type-not-insdc`(WARN、`feature-mapping.tsv` の許可集合に無い)
 **ID / Parent**: `missing-id-with-children`(ERROR) / `duplicate-id-different-type`(ERROR) / `multiple-parents`(ERROR、INSDCは単一) / `dangling-parent`(ERROR)
+
+> 実装上の整合（Global Constraints の決定）: `missing-id-with-children` と `duplicate-id-different-type` は Phase1 パース時に enforce 済みで `doc.diagnostics` に出る（同ID異typeは `id-type-mismatch` ERROR、ID欠落での親参照不能は `dangling-parent` に包含）。CLI が `doc.diagnostics` ＋ `validate()` を統合提示するため検出意図は満たす。検証器の独立ルール（`ALL_RULES`）は観測可能な `multiple-parents`/`dangling-parent` を担当し、ライブラリ `validate()` 単体は ID 系診断を再掲しない。
 **CDS**: `cds-missing-transl-table`(ERROR、翻訳産物ありで transl_table も file 先頭 `#!transl_table` も無い) / `cds-invalid-phase`(ERROR、0/1/2でない)
 **遺伝子注釈**: `gene-missing-locus-tag`(WARN)
 **Dbxref**: `dbxref-unknown-dbtag`(WARN)

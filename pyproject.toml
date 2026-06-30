@@ -12,6 +12,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ddbj_gff"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests"]
+
 [dependency-groups]
 dev = ["pytest>=8"]
 
