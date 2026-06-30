@@ -51,6 +51,14 @@ def test_placeholder_qualifier_not_fabricated():
     assert any(c.action == "needs-manual" for c in changes)
 
 
+def test_mobile_genetic_element_renames_and_flags_manual():
+    f = Feature("m", "S", "mobile_genetic_element", [Span("chr1", 1, 9, "+")], {}, [])
+    changes = pass_so_terms(_doc(f), _ctx())
+    assert f.type == "mobile_element"
+    assert "mobile_element_type" not in f.attributes      # placeholder value NOT fabricated
+    assert any(c.action == "needs-manual" for c in changes)
+
+
 def test_existing_attribute_not_clobbered():
     f = Feature("c", "S", "pseudogenic_CDS", [Span("chr1", 1, 9, "+", 0)], {"pseudo": ["existing"]}, [])
     pass_so_terms(_doc(f), _ctx())

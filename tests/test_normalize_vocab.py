@@ -16,6 +16,14 @@ def test_duplicate_so_term_prefers_concrete():
     assert all("*" not in q for q in quals)
 
 
+def test_placeholder_qualifier_not_displaced_by_empty():
+    v = load_vocab()
+    # mobile_genetic_element has a placeholder row and an empty row; the placeholder must survive
+    quals = v.feature_qualifiers["mobile_genetic_element"]
+    assert quals  # not empty
+    assert any("<" in q or "*" in q for q in quals)  # the placeholder is retained
+
+
 def test_insdc_map_unchanged_for_3a():
     v = load_vocab()
     assert "CDS" in v.feature_types

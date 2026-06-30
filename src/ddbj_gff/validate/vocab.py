@@ -19,6 +19,12 @@ def _is_concrete(quals: tuple[str, ...]) -> bool:
     return all("<" not in q and ">" not in q and "*" not in q for q in quals)
 
 
+def _qual_rank(quals: tuple[str, ...]) -> int:
+    if not quals:
+        return 0                                  # no qualifier — least preferred
+    return 2 if _is_concrete(quals) else 1        # concrete=2, placeholder (<,>,*)=1
+
+
 def _read_feature_mapping() -> tuple[frozenset[str], dict[str, str], dict[str, tuple[str, ...]]]:
     terms: set[str] = set()
     mapping: dict[str, str] = {}
@@ -40,8 +46,8 @@ def _read_feature_mapping() -> tuple[frozenset[str], dict[str, str], dict[str, t
             if so_term not in mapping:
                 mapping[so_term] = insdc
                 qualifiers[so_term] = quals
-            elif not _is_concrete(qualifiers.get(so_term, ())) and _is_concrete(quals):
-                qualifiers[so_term] = quals  # 重複: 具体値の行を優先
+            elif _qual_rank(quals) > _qual_rank(qualifiers.get(so_term, ())):
+                qualifiers[so_term] = quals  # 重複: concrete > placeholder > empty
     return frozenset(terms), mapping, qualifiers
 
 
