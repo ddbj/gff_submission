@@ -1,0 +1,8 @@
+##gff-version 3
+#!insdc-gff-version 1.0.0
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=3702
+##sequence-region chr1 1 10000
+chr1	S	gene	100	900	.	+	.	ID=g1;locus_tag=ABC_000010
+chr1	S	mRNA	100	900	.	+	.	ID=m1;Parent=g1
+chr1	S	exon	100	900	.	+	.	ID=e1;Parent=m1
+chr1	S	CDS	130	870	.	+	0	ID=c1;Parent=m1;transl_table=1;Dbxref=GeneID:123
