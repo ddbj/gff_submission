@@ -28,6 +28,16 @@ def test_severity_override_off_and_promote():
     assert g.severity == Severity.ERROR
 
 
+def test_bad_override_level_is_lenient():
+    # validate() must not raise on an unknown override level (§5 lenient principle).
+    # The diagnostic must remain present with its DEFAULT severity (WARNING).
+    diags = validate(parse(GFF_BAD), severity_overrides={"gene-missing-locus-tag": "bogus"})
+    codes = {d.code for d in diags}
+    assert "gene-missing-locus-tag" in codes
+    g = [d for d in diags if d.code == "gene-missing-locus-tag"][0]
+    assert g.severity == Severity.WARNING
+
+
 def test_validate_sorted_and_does_not_mutate_doc():
     doc = parse(GFF_BAD)
     before = len(doc.diagnostics)

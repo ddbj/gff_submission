@@ -1,3 +1,5 @@
+import pytest
+
 from ddbj_gff.validate.cli import main
 
 VALID = (
@@ -25,6 +27,14 @@ def test_cli_bad_returns_one_and_reports(tmp_path, capsys):
     err = capsys.readouterr().err
     assert "ERROR" in err
     assert "missing-insdc-gff-version" in err
+
+
+def test_cli_bad_severity_level_exits_with_2(tmp_path):
+    # --severity CODE=bogus must produce a clean argparse error (SystemExit 2), not a traceback.
+    p = tmp_path / "b.gff"; p.write_text(BAD)
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--gff", str(p), "--severity", "gene-missing-locus-tag=bogus"])
+    assert exc_info.value.code == 2
 
 
 def test_cli_severity_override(tmp_path):

@@ -17,7 +17,11 @@ def validate(doc, *, severity_overrides: dict[str, str] | None = None) -> list:
     out: list = []
     for d in diags:
         if d.code in overrides:
-            level = resolve_level(overrides[d.code])
+            try:
+                level = resolve_level(overrides[d.code])
+            except ValueError:
+                out.append(d)        # unknown level → keep diagnostic, severity unchanged (lenient, §5)
+                continue
             if level is None:        # "off"
                 continue
             d = dataclasses.replace(d, severity=level)

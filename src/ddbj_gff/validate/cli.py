@@ -5,6 +5,7 @@ import sys
 
 from .. import parse
 from ..errors import Severity
+from .severities import resolve_level
 from .validate import validate
 
 
@@ -21,6 +22,10 @@ def main(argv: list[str] | None = None) -> int:
         if "=" not in item:
             ap.error(f"--severity expects CODE=LEVEL, got {item!r}")
         code, level = item.split("=", 1)
+        try:
+            resolve_level(level.strip())
+        except ValueError as e:
+            ap.error(str(e))
         overrides[code.strip()] = level.strip()
 
     with open(args.gff, encoding="ascii", errors="replace") as fh:
