@@ -43,11 +43,11 @@ def test_unmapped_type_reported_unchanged():
 
 
 def test_placeholder_qualifier_not_fabricated():
-    # mobile_genetic_element -> mobile_element with /mobile_element_type="other:<NAME>" (placeholder)
-    f = Feature("m", "S", "mobile_genetic_element", [Span("chr1", 1, 9, "+")], {}, [])
+    # binding_site -> misc_binding with /bound_moiety="<NAME>" (placeholder, non-duplicate SO term)
+    f = Feature("b", "S", "binding_site", [Span("chr1", 1, 9, "+")], {}, [])
     changes = pass_so_terms(_doc(f), _ctx())
-    assert f.type == "mobile_element"
-    assert "mobile_element_type" not in f.attributes  # placeholder value NOT added
+    assert f.type == "misc_binding"
+    assert "bound_moiety" not in f.attributes   # placeholder value NOT added
     assert any(c.action == "needs-manual" for c in changes)
 
 
