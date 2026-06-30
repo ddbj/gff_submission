@@ -79,6 +79,9 @@ def _qualifier_to_attr(qual: str) -> tuple[str, str | None]:
     return body.strip(), None  # valueless flag (e.g. /pseudo)
 
 
+_COLLAPSE_TARGETS = {"gene", "mRNA", "CDS", "exon", "intron"}
+
+
 def pass_so_terms(doc, ctx) -> list:
     vocab = ctx.vocab
     changes: list = []
@@ -88,7 +91,9 @@ def pass_so_terms(doc, ctx) -> list:
             changes.append(Change("unmapped-type", f.id or "?",
                                   f"feature type {f.type!r} is not a known SO term; left unchanged"))
             continue
-        if target == f.type:
+        if target == f.type or target not in _COLLAPSE_TARGETS:
+            # already a core type, or maps to a non-core INSDC feature that Phase 2
+            # handles during generation (ncRNA/precursor_RNA/5'UTR/...) -> leave as-is
             continue
         old = f.type
         f.type = target
@@ -100,7 +105,7 @@ def pass_so_terms(doc, ctx) -> list:
                 continue
             key, val = _qualifier_to_attr(qual)
             if key in f.attributes:
-                continue  # don't clobber existing
+                continue
             f.attributes[key] = [val if val is not None else "true"]
             changes.append(Change("add-qualifier", f.id or "?",
                                   f"added {key}={f.attributes[key][0]}"))
