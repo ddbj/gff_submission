@@ -64,3 +64,38 @@ def test_finding_a_no_feature_type_warning_for_left_types():
     assert "five_prime_UTR" in types                           # UTR left alone
     codes = {d.code for d in validate(norm)}
     assert "feature-type-not-insdc" not in codes               # Finding A regression guard
+
+
+def test_anticodon_fixture_becomes_child():
+    from ddbj_gff.normalize import normalize as _normalize  # already imported as normalize
+    gff = (
+        "##gff-version 3\n"
+        "##sequence-region chr1 1 20000\n"
+        "chr1\tS\ttRNA\t14674\t14742\t.\t-\t.\tID=t1;anticodon=(pos:complement(14710..14712)%2Caa:Glu%2Cseq:ttc)\n"
+    )
+    norm, _ = normalize(parse(gff), config=NormalizeConfig(taxid=1148))
+    anti = [f for f in norm.features if f.type == "anticodon"]
+    assert len(anti) == 1
+    assert anti[0].attributes["amino_acid"] == ["glutamic acid"]
+    # validator no longer flags the anticodon attribute (it was converted)
+    codes = {d.code for d in validate(norm)}
+    assert "noncanonical-special-case" not in codes
+
+
+@pytest.mark.slow
+def test_ecoli_transl_except_canonicalized_and_translates():
+    import gzip
+    p = ROOT / "examples" / "ecoli" / "GCF_000005845.2_ASM584v2_genomic.gff.gz"
+    if not p.exists():
+        pytest.skip(f"missing {p}")
+    text = gzip.decompress(p.read_bytes()).decode("ascii", errors="replace")
+    norm, _ = normalize(parse(text), config=NormalizeConfig(taxid=511145))
+    # transl_except attributes converted to recoded_codon children
+    recoded = [f for f in norm.features if f.type == "recoded_codon"]
+    assert len(recoded) >= 3   # fdnG / fdoG / fdhF selenocysteine
+    diags = validate(norm)
+    # transl_except no longer flagged as noncanonical (attribute -> recoded_codon child)
+    assert not any(d.code == "noncanonical-special-case" and "transl_except" in (d.message or "")
+                   for d in diags)
+    # canonical recoded_codon children are accepted by the validator (Task 5), not flagged
+    assert not any("recoded_codon" in (d.message or "") for d in diags)
