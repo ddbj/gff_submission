@@ -4,10 +4,10 @@ import copy
 
 from ..validate.vocab import load_vocab
 from .config import NormalizeConfig
-from .passes import NormalizeContext, pass_directives, pass_so_terms, pass_transl_except
+from .passes import NormalizeContext, pass_directives, pass_so_terms, pass_transl_except, pass_anticodon
 from .report import NormalizationReport
 
-ALL_PASSES = [pass_directives, pass_so_terms, pass_transl_except]
+ALL_PASSES = [pass_directives, pass_so_terms, pass_transl_except, pass_anticodon]
 
 # actions that represent a clean applied change; everything else needs human attention
 _APPLIED = {"add-directive", "rename-type", "add-qualifier", "add-child-feature"}

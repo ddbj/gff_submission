@@ -181,3 +181,45 @@ def pass_transl_except(doc, ctx) -> list:
                 del f.attributes["transl_except"]
     _attach_children(doc, pending)
     return changes
+
+
+def pass_anticodon(doc, ctx) -> list:
+    changes: list = []
+    pending: list = []
+    for f in list(doc.features):
+        if f.type != "tRNA":
+            continue
+        specs = f.attributes.get("anticodon")
+        if not specs or not f.spans:
+            continue
+        lo = min(s.start for s in f.spans)
+        hi = max(s.end for s in f.spans)
+        seqid = f.spans[0].seqid
+        kept: list = []
+        made = 0
+        for spec in specs:
+            p = _parse_pos_spec(spec)
+            if p is None or not (lo <= p["start"] and p["end"] <= hi):
+                changes.append(Change("needs-manual", f.id or "?",
+                                      f"tRNA {f.id!r} anticodon {spec!r} not a single in-bounds pos; kept as attribute"))
+                kept.append(spec)
+                continue
+            made += 1
+            child_id = f"{f.id}_anticodon_{made}"
+            attrs = {"ID": [child_id], "Parent": [f.id]}
+            if p["aa"]:
+                attrs["amino_acid"] = [aa_names.full_name(p["aa"])]
+            if p["seq"]:
+                attrs["sequence"] = [p["seq"]]
+            child = Feature(child_id, f.source, "anticodon",
+                            [Span(seqid, p["start"], p["end"], p["strand"], None)], attrs, [f.id])
+            pending.append((child, f))
+            changes.append(Change("add-child-feature", child_id,
+                                  f"tRNA {f.id!r}: anticodon -> anticodon child ({p['start']}..{p['end']})"))
+        if made:
+            if kept:
+                f.attributes["anticodon"] = kept
+            else:
+                del f.attributes["anticodon"]
+    _attach_children(doc, pending)
+    return changes
