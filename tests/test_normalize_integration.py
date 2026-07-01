@@ -67,7 +67,6 @@ def test_finding_a_no_feature_type_warning_for_left_types():
 
 
 def test_anticodon_fixture_becomes_child():
-    from ddbj_gff.normalize import normalize as _normalize  # already imported as normalize
     gff = (
         "##gff-version 3\n"
         "##sequence-region chr1 1 20000\n"
