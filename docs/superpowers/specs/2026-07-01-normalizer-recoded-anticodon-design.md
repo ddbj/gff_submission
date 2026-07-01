@@ -31,6 +31,7 @@ Phase 2 は現状 CDS を plain `Seq(coding).translate(table)` で翻訳（conve
 | R-D5 | 翻訳関数 | `translate_with_transl_except.py` を `src/ddbj_gff/mss/translate.py` として verbatim vendoring（provenance ヘッダ付）。Phase2 build_cds_feature が呼ぶ |
 | R-D6 | 翻訳例外ソース | Phase2 は transl_except 属性（raw）＋ recoded_codon/stop_codon 子（3-B後）の**両方**から例外を収集し関数へ供給 |
 | R-D7 | aa マッピング | 略号↔full name↔1文字 を集約（vendored `_AA_3TO1` 3→1文字を土台、full name 小 dict 補完）。3-B の codon_redefined 生成と Phase2 再構成が共有 |
+| R-D8 | 3-A 受入 | 3-B の canonical 子feature（recoded_codon/anticodon/stop_codon/start_codon）は SO-term 集合に無く 3-A `feature-type-not-insdc`(WARN) を誤発火する。`rule_feature_type` に特殊型 accept-set を小追加して受け入れる（ユーザー決定・当初「3-A 不変」を緩和）|
 
 依存: normalize パスは stdlib のみ維持。Biopython 翻訳は Phase2（`mss`、既に Biopython 使用）に閉じる。
 
@@ -89,4 +90,4 @@ Phase 2 は現状 CDS を plain `Seq(coding).translate(table)` で翻訳（conve
 **スコープ境界:**
 - 内: `pass_transl_except`・`pass_anticodon`・vendored 翻訳・Phase2 統合・aa マッピング集約。
 - 外（次）: trans-splicing（`location=join(...)`）・circular 座標（end>seqlen・is_circular）／プレースホルダ qualifier 能動処理。
-- 非責務: 3-A 検証・SO-term 正規化パスは変更しない。
+- 3-A 検証は `rule_feature_type` の accept-set 小追加のみ（recoded_codon/anticodon/stop_codon/start_codon を許可）。SO-term 正規化パス（pass_so_terms）は変更しない。
