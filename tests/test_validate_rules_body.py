@@ -67,5 +67,12 @@ def test_special_case_detection():
     assert "noncanonical-special-case" in c
 
 
+def test_insdc_gff3_special_types_not_flagged():
+    for t in ("recoded_codon", "anticodon", "stop_codon", "start_codon"):
+        f = Feature("x", "S", t, [Span("c", 1, 3, "+")], {}, [])
+        c = codes(rules.rule_feature_type(GffDocument(features=[f]), V))
+        assert "feature-type-not-insdc" not in c, t
+
+
 def test_all_rules_list_complete():
     assert len(rules.ALL_RULES) == 10

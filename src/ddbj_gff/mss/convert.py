@@ -8,13 +8,35 @@ from Bio.SeqFeature import (AfterPosition, BeforePosition, CompoundLocation,
                             FeatureLocation)
 from Bio.SeqIO.InsdcIO import _insdc_location_string
 
+from Bio.SeqFeature import SeqFeature
+
 from ..errors import Diagnostic, GffParseError, Severity
+from .. import aa_names
 from .config import MssConfig
 from .gaps import assembly_gap_features
 from .locus_tag import LocusTagAssigner
 from .model import MssDocument, MssEntry, MssFeature, MssQualifier
+from .translate import translate_cds_with_transl_except
 
 _STRAND = {"+": 1, "-": -1}
+
+
+def _collect_transl_excepts(cds_feat) -> list:
+    """Gather transl_except specs from the CDS attribute (raw) and recoded_codon/stop_codon children."""
+    specs = list(cds_feat.attributes.get("transl_except", []))
+    for child in cds_feat.children:
+        if child.type not in ("recoded_codon", "stop_codon"):
+            continue
+        sp = child.spans[0]
+        loc = f"{sp.start}..{sp.end}" if sp.start != sp.end else f"{sp.start}"
+        if sp.strand == "-":
+            loc = f"complement({loc})"
+        if child.type == "stop_codon":
+            aa = "Term"
+        else:
+            aa = aa_names.to_abbrev((child.attributes.get("codon_redefined") or [""])[0])
+        specs.append(f"(pos:{loc},aa:{aa})")
+    return specs
 
 
 def collect_spans(parent, feature_type: str) -> list:
@@ -151,7 +173,16 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-not-multiple-of-3",
                                       f"CDS {mrna.id!r} coding length not a multiple of 3"))
     coding_full = coding[: len(coding) - len(coding) % 3]
-    protein = str(Seq(coding_full).translate(table=table_id))
+    cds_feat = next((c for c in mrna.children if c.type == "CDS"), None)
+    excepts = _collect_transl_excepts(cds_feat) if cds_feat is not None else []
+    if excepts:
+        sf = SeqFeature(cds_feat.to_biopython_location(), type="CDS",
+                        qualifiers={"transl_table": [str(table_id)],
+                                    "codon_start": [str(codon_start)],
+                                    "transl_except": excepts})
+        protein = str(translate_cds_with_transl_except(sf, genome_seq))
+    else:
+        protein = str(Seq(coding_full).translate(table=table_id))
     body = protein[:-1] if protein.endswith("*") else protein
     if "*" in body:
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-internal-stop",

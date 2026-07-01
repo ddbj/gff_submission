@@ -74,10 +74,15 @@ def rule_start_gt_end(doc, vocab) -> list:
     return diags
 
 
+# canonical INSDC GFF3 special-case feature types (spec v0.5): valid col3 values not present
+# in the SO-term column of feature-mapping.tsv
+_INSDC_GFF3_SPECIAL = {"recoded_codon", "anticodon", "stop_codon", "start_codon"}
+
+
 def rule_feature_type(doc, vocab) -> list:
     diags = []
     for f in doc.features:
-        if f.type not in vocab.feature_types:
+        if f.type not in vocab.feature_types and f.type not in _INSDC_GFF3_SPECIAL:
             diags.append(make_diagnostic("feature-type-not-insdc",
                                          f"feature {f.id!r} type {f.type!r} is not an INSDC-supported "
                                          f"SO term"))

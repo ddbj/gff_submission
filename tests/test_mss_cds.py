@@ -91,3 +91,22 @@ def test_no_cds_returns_none_and_warns():
     diags = []
     assert build_cds_feature(mrna, gene, "PFX_000010", Seq("AAA"), cfg(), diags) is None
     assert any(d.code == "no-cds" for d in diags)
+
+
+def test_recoded_codon_child_avoids_internal_stop_warning():
+    # CDS ATG TGA AAA TAA on + strand; TGA (4..6) is recoded via a recoded_codon child.
+    genome = Seq("ATGTGAAAATAA")
+    cds = Feature("c1", "S", "CDS", [Span("s", 1, 12, "+", 0)],
+                  {"ID": ["c1"], "transl_table": ["11"]}, ["m1"])
+    recoded = Feature("c1_recoded_1", "S", "recoded_codon", [Span("s", 4, 6, "+", 0)],
+                      {"ID": ["c1_recoded_1"], "Parent": ["c1"], "codon_redefined": ["selenocysteine"]},
+                      ["c1"])
+    cds.children = [recoded]
+    mrna = Feature("m1", "S", "mRNA", [Span("s", 1, 12, "+")], {"ID": ["m1"]}, ["g1"])
+    mrna.children = [cds]
+    gene = Feature("g1", "S", "gene", [Span("s", 1, 12, "+")], {"ID": ["g1"]}, [])
+    cfg = MssConfig(source={"organism": "x", "mol_type": "genomic DNA"})
+    diags: list = []
+    feat = build_cds_feature(mrna, gene, "LT_1", genome, cfg, diags)
+    assert feat is not None
+    assert not any(d.code == "translation-internal-stop" for d in diags)
