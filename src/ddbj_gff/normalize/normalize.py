@@ -4,13 +4,13 @@ import copy
 
 from ..validate.vocab import load_vocab
 from .config import NormalizeConfig
-from .passes import NormalizeContext, pass_directives, pass_so_terms
+from .passes import NormalizeContext, pass_directives, pass_so_terms, pass_transl_except
 from .report import NormalizationReport
 
-ALL_PASSES = [pass_directives, pass_so_terms]
+ALL_PASSES = [pass_directives, pass_so_terms, pass_transl_except]
 
 # actions that represent a clean applied change; everything else needs human attention
-_APPLIED = {"add-directive", "rename-type", "add-qualifier"}
+_APPLIED = {"add-directive", "rename-type", "add-qualifier", "add-child-feature"}
 
 
 def normalize(doc, *, seq_lengths=None, config=None) -> tuple:

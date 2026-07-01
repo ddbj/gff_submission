@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
-from ..model import Directive
+from ..model import Directive, Feature, Span
+from .. import aa_names
 from .report import Change
 
 _SPECIES_URL = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={taxid}"
@@ -109,4 +111,73 @@ def pass_so_terms(doc, ctx) -> list:
             f.attributes[key] = [val if val is not None else "true"]
             changes.append(Change("add-qualifier", f.id or "?",
                                   f"added {key}={f.attributes[key][0]}"))
+    return changes
+
+
+def _parse_pos_spec(spec: str) -> dict | None:
+    """Parse '(pos:139..141,aa:Sec[,seq:ttc])' (already URL-decoded). Single range only."""
+    if "join" in spec.lower():
+        return None
+    m = re.search(r"pos:(complement\()?(\d+)(?:\.\.(\d+))?\)?", spec)
+    if not m:
+        return None
+    start = int(m.group(2))
+    end = int(m.group(3)) if m.group(3) else start
+    strand = "-" if m.group(1) else "+"
+    aa_m = re.search(r"aa:([A-Za-z*]+)", spec)
+    seq_m = re.search(r"seq:([A-Za-z]+)", spec)
+    return {"start": start, "end": end, "strand": strand,
+            "aa": aa_m.group(1) if aa_m else None,
+            "seq": seq_m.group(1) if seq_m else None}
+
+
+def _attach_children(doc, pending) -> None:
+    for child, parent in pending:
+        doc.features.append(child)
+        if child.id:
+            doc.feature_index[child.id] = child
+        parent.children.append(child)
+
+
+def pass_transl_except(doc, ctx) -> list:
+    changes: list = []
+    pending: list = []
+    for f in list(doc.features):
+        if f.type != "CDS":
+            continue
+        specs = f.attributes.get("transl_except")
+        if not specs or not f.spans:
+            continue
+        lo = min(s.start for s in f.spans)
+        hi = max(s.end for s in f.spans)
+        seqid = f.spans[0].seqid
+        kept: list = []
+        made = 0
+        for spec in specs:
+            p = _parse_pos_spec(spec)
+            if p is None or p["aa"] is None or not (lo <= p["start"] and p["end"] <= hi):
+                changes.append(Change("needs-manual", f.id or "?",
+                                      f"CDS {f.id!r} transl_except {spec!r} not a single in-bounds pos; kept as attribute"))
+                kept.append(spec)
+                continue
+            made += 1
+            child_id = f"{f.id}_recoded_{made}"
+            if aa_names.is_stop(p["aa"]):
+                ctype = "stop_codon"
+                attrs = {"ID": [child_id], "Parent": [f.id], "Note": ["stop codon completed"]}
+            else:
+                ctype = "recoded_codon"
+                attrs = {"ID": [child_id], "Parent": [f.id],
+                         "codon_redefined": [aa_names.full_name(p["aa"])]}
+            child = Feature(child_id, f.source, ctype,
+                            [Span(seqid, p["start"], p["end"], p["strand"], 0)], attrs, [f.id])
+            pending.append((child, f))
+            changes.append(Change("add-child-feature", child_id,
+                                  f"CDS {f.id!r}: transl_except -> {ctype} ({p['start']}..{p['end']})"))
+        if made:
+            if kept:
+                f.attributes["transl_except"] = kept
+            else:
+                del f.attributes["transl_except"]
+    _attach_children(doc, pending)
     return changes
