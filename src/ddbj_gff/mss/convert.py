@@ -284,6 +284,8 @@ def build_rna_feature(rna, locus_tag: str, seqlen: int, gene_id: str, tx_id: str
         quals.append(MssQualifier("db_xref", x))
     for note_val in rna.note:
         quals.append(MssQualifier("note", note_val))
+    for note_val in rna.attributes.get("note", []):
+        quals.append(MssQualifier("note", note_val))
     quals.append(_submitter_note_ids(gene_id, tx_id))
     return MssFeature(feat_key, location, quals)
 
@@ -324,6 +326,7 @@ def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> l
         transcripts = [rep] if rep is not None else []
 
     features = []
+    misc_feats: list = []
     locus_tag = None
     cds_index = {}
     cds_order = []
@@ -336,7 +339,7 @@ def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> l
             locus_tag = assigner.assign(gene)
         cds = build_cds_feature(mrna, gene, locus_tag, genome_seq, cfg, diagnostics)
         if cds is not None and cds.key == "misc_feature":
-            features.append(cds)
+            misc_feats.append(cds)
             continue
         features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
         if cds is None:
@@ -355,6 +358,8 @@ def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> l
             if len(tids) > 1:
                 _set_submitter_transcripts(cds, gene, tids)
             features.append(cds)
+    if not features and misc_feats:
+        features.append(misc_feats[0])
     return features
 
 

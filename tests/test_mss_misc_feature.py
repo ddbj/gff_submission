@@ -1,4 +1,5 @@
 from Bio.Seq import Seq
+from ddbj_gff import parse
 from ddbj_gff.model import Feature, Span
 from ddbj_gff.mss.config import MssConfig
 from ddbj_gff.mss.convert import build_cds_feature, build_gene_features
@@ -35,3 +36,41 @@ def test_gene_with_internal_stop_emits_only_misc_feature():
     feats = build_gene_features(gene, "nonredundant", assigner, genome, cfg(), [])
     keys = [f.key for f in feats]
     assert keys == ["misc_feature"]  # mRNA/CDS は出さない
+
+
+def test_multi_transcript_all_broken_emits_single_misc_feature():
+    GFF = (
+        "##gff-version 3\n"
+        "c1\tS\tgene\t1\t9\t.\t+\t.\tID=g\n"
+        "c1\tS\tmRNA\t1\t9\t.\t+\t.\tID=g.t1;Parent=g\n"
+        "c1\tS\tCDS\t1\t9\t.\t+\t0\tID=cds1;Parent=g.t1\n"
+        "c1\tS\tmRNA\t1\t9\t.\t+\t.\tID=g.t2;Parent=g\n"
+        "c1\tS\tCDS\t1\t9\t.\t+\t0\tID=cds2;Parent=g.t2\n"
+    )
+    doc = parse(GFF)
+    gene = [f for f in doc.roots if f.type == "gene"][0]
+    assigner = LocusTagAssigner("L", 6, 10, 10)
+    feats = build_gene_features(gene, "nonredundant", assigner, Seq("ATGTAAAAA"), cfg(), [])
+    keys = [f.key for f in feats]
+    assert keys == ["misc_feature"]  # 全転写産物 broken -> misc は1つ
+    tags = [q.value for f in feats for q in f.qualifiers if q.key == "locus_tag"]
+    assert len(tags) == len(set(tags))  # locus_tag 重複なし
+
+
+def test_mixed_transcript_prefers_valid_cds_no_misc():
+    GFF = (
+        "##gff-version 3\n"
+        "c1\tS\tgene\t1\t12\t.\t+\t.\tID=g\n"
+        "c1\tS\tmRNA\t1\t9\t.\t+\t.\tID=g.t1;Parent=g\n"
+        "c1\tS\tCDS\t1\t9\t.\t+\t0\tID=cds1;Parent=g.t1\n"
+        "c1\tS\tmRNA\t1\t12\t.\t+\t.\tID=g.t2;Parent=g\n"
+        "c1\tS\tCDS\t1\t12\t.\t+\t0\tID=cds2;Parent=g.t2\n"
+    )
+    doc = parse(GFF)
+    gene = [f for f in doc.roots if f.type == "gene"][0]
+    assigner = LocusTagAssigner("L", 6, 10, 10)
+    # genome ATGAAATAACCC: t1 CDS 1..9 = ATGAAATAA (MK*, clean terminal stop); t2 CDS 1..12 = ATGAAATAACCC (MK*P internal stop)
+    feats = build_gene_features(gene, "nonredundant", assigner, Seq("ATGAAATAACCC"), cfg(), [])
+    keys = [f.key for f in feats]
+    assert "misc_feature" not in keys  # 有効アイソフォームがあるので misc は出さない
+    assert "CDS" in keys and "mRNA" in keys

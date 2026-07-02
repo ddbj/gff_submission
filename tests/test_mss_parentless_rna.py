@@ -27,3 +27,10 @@ def test_parentless_rna_emitted_as_toplevel_with_locus_tag():
     assert rr["product"] == "18S ribosomal RNA"
     tr = {q.key: q.value for q in per["c1"][1].qualifiers}
     assert tr["product"] == "tRNA-Thr"  # isotype から導出
+
+
+def test_parentless_ncrna_lowercase_note_preserved():
+    doc = parse(GFF)
+    per = build_entry_features(doc, {"c1": Seq("A" * 300)}, cfg(), [])
+    nc = per["c1"][0]
+    assert any(q.key == "note" and q.value == "hit" for q in nc.qualifiers)
