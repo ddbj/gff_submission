@@ -54,7 +54,9 @@ def test_nonredundant_dedupes_shared_cds():
 
 def test_nonredundant_keeps_distinct_cds():
     g = two_transcript_gene(cds_same=False)
-    feats = build_gene_features(g, "nonredundant", assigner(), Seq("ATGAAATAA" + "C" * 31), cfg(), [])
+    # ATGAAAGGGCCC: t1 CDS 1..9 = ATGAAAGGG (MKG, 3' partial), t2 CDS 1..12 = ATGAAAGGGCCC (MKGP, 3' partial)
+    # neither has an internal stop codon
+    feats = build_gene_features(g, "nonredundant", assigner(), Seq("ATGAAAGGGCCC" + "C" * 28), cfg(), [])
     assert keys(feats) == ["mRNA", "mRNA", "CDS", "CDS"]  # different CDS -> not deduped
 
 

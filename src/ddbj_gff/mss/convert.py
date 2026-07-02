@@ -188,6 +188,10 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
     if "*" in body:
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-internal-stop",
                                       f"CDS {mrna.id!r} has an internal stop codon"))
+        loc = build_insdc_location(spans, len(genome_seq))
+        note = f"internal stop codon(s) detected in CDS {mrna.id}; not translated"
+        quals = [MssQualifier("locus_tag", locus_tag), MssQualifier("note", note)]
+        return MssFeature("misc_feature", loc, quals)
     if not five_prime_partial and not protein.startswith("M"):
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-no-start",
                                       f"CDS {mrna.id!r} does not start with M"))
@@ -324,8 +328,11 @@ def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> l
             continue
         if locus_tag is None:
             locus_tag = assigner.assign(gene)
-        features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
         cds = build_cds_feature(mrna, gene, locus_tag, genome_seq, cfg, diagnostics)
+        if cds is not None and cds.key == "misc_feature":
+            features.append(cds)
+            continue
+        features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
         if cds is None:
             continue
         if mode == "nonredundant":

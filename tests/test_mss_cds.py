@@ -68,11 +68,12 @@ def test_multi_span_join_complete():
     assert f.location == "join(1..3,7..9)"
 
 
-def test_internal_stop_diagnostic():
-    genome = Seq("ATGTAAAAA")  # ATG TAA AAA -> M*K  internal stop at codon 2
+def test_internal_stop_returns_misc_feature():
+    genome = Seq("ATGTAAAAA")  # M*K
     gene, mrna = mrna_with_cds([(1, 9)], strand="+", phase0=0)
     diags = []
-    build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), diags)
+    f = build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), diags)
+    assert f.key == "misc_feature"
     assert any(d.code == "translation-internal-stop" for d in diags)
 
 
