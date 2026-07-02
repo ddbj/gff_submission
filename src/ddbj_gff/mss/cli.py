@@ -6,9 +6,11 @@ import sys
 from Bio import SeqIO
 
 from .. import parse
+from ..io import open_text
 from .config import load_common, load_config
 from .convert import convert
 from .emit import emit_ann, emit_fasta
+from .product_map import load_product_map
 from ..errors import Severity
 
 
@@ -26,8 +28,11 @@ def main(argv: list[str] | None = None) -> int:
 
     with open(args.gff, encoding="ascii", errors="replace") as fh:
         doc = parse(fh.read())
-    seqs = {rec.id: rec.seq for rec in SeqIO.parse(args.fasta, "fasta")}
+    with open_text(args.fasta) as fh:
+        seqs = {rec.id: rec.seq for rec in SeqIO.parse(fh, "fasta")}
     cfg, cfg_diags = load_config(args.config)
+    if cfg.product_map_path:
+        cfg.product_map = load_product_map(cfg.product_map_path)
     if args.mode:
         cfg.transcript_mode = args.mode
     common_rows = load_common(args.common)

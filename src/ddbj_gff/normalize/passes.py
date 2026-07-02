@@ -183,6 +183,19 @@ def pass_transl_except(doc, ctx) -> list:
     return changes
 
 
+def pass_coerce_transcript_to_mrna(doc, ctx) -> list:
+    changes: list = []
+    if not getattr(ctx.config, "coerce_transcript_to_mrna", True):
+        return changes
+    for f in doc.features:
+        if f.type != "transcript":
+            continue
+        if any(c.type == "CDS" for c in f.children):
+            f.type = "mRNA"
+            changes.append(Change("rename-type", f.id or "?", "transcript -> mRNA (has CDS)"))
+    return changes
+
+
 def pass_anticodon(doc, ctx) -> list:
     changes: list = []
     pending: list = []

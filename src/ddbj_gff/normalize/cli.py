@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from .. import parse
+from ..io import open_text
 from ..writer import write
 from .config import NormalizeConfig, load_normalize_config
 from .normalize import normalize
@@ -33,7 +34,8 @@ def main(argv: list[str] | None = None) -> int:
     seq_lengths = None
     if args.fasta:
         from Bio import SeqIO
-        seq_lengths = {rec.id: len(rec.seq) for rec in SeqIO.parse(args.fasta, "fasta")}
+        with open_text(args.fasta) as fh:
+            seq_lengths = {rec.id: len(rec.seq) for rec in SeqIO.parse(fh, "fasta")}
 
     with open(args.gff, encoding="ascii", errors="replace") as fh:
         doc = parse(fh.read())
