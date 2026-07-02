@@ -369,6 +369,18 @@ def build_entry_features(doc, seqs, cfg, diagnostics: list) -> dict:
         parentless = [f for f in doc.roots
                       if f.type in _PARENTLESS_RNA_TYPES
                       and any(s.seqid == seqid for s in f.spans)]
+
+        def _is_pseudogene(f):
+            return f.type == "pseudogene" or f._first("gene_biotype") == "pseudogene"
+
+        pseudo_roots = [f for f in doc.roots
+                        if _is_pseudogene(f) and any(s.seqid == seqid for s in f.spans)]
+        skipped = len(pseudo_roots)
+        genes = [g for g in genes if not _is_pseudogene(g)]
+        parentless = [r for r in parentless if not _is_pseudogene(r)]
+        if skipped:
+            diagnostics.append(Diagnostic(Severity.WARNING, None, "pseudogene-skipped",
+                                          f"{seqid}: skipped {skipped} pseudogene feature(s)"))
         items = [(_span_start(g), g) for g in genes] + [(_span_start(r), r) for r in parentless]
         items.sort(key=lambda t: t[0])
         feats: list = []
