@@ -242,26 +242,49 @@ _RNA_MAP = {
 _STRUCTURAL = {"exon", "CDS", "intron", "five_prime_UTR", "three_prime_UTR",
                "start_codon", "stop_codon"}
 
+_PARENTLESS_RNA_TYPES = set(_RNA_MAP) | {"ncRNA", "tRNA", "rRNA"}
+_NCRNA_KNOWN = {"snRNA", "snoRNA", "miRNA", "siRNA", "scRNA", "antisense_RNA",
+                "ribozyme", "RNase_P_RNA", "telomerase_RNA", "lncRNA", "SRP_RNA",
+                "guide_RNA", "vault_RNA", "Y_RNA", "autocatalytically_spliced_intron"}
+
+
+def _submitter_note_ids(gene_id, tx_id) -> MssQualifier:
+    return MssQualifier("note", f"submitter_gene_id: {gene_id}, submitter_transcript_id: {tx_id}")
+
+
+def build_rna_feature(rna, locus_tag: str, seqlen: int, gene_id: str, tx_id: str,
+                      gene_name: str | None = None) -> MssFeature:
+    feat_key = _RNA_MAP.get(rna.type, "misc_RNA")
+    spans = collect_spans(rna, "exon") or rna.spans
+    location = build_insdc_location(spans, seqlen)
+    quals = [MssQualifier("locus_tag", locus_tag)]
+    if feat_key == "ncRNA":
+        klass = rna.type if rna.type in _NCRNA_KNOWN else "other"
+        quals.append(MssQualifier("ncRNA_class", klass))
+    product = rna.product
+    if not product and rna.type == "tRNA":
+        iso = rna._first("isotype")
+        if iso:
+            product = f"tRNA-{iso}"
+    if product:
+        quals.append(MssQualifier("product", product))
+    if gene_name:
+        quals.append(MssQualifier("gene", gene_name))
+    for x in rna.dbxref:
+        quals.append(MssQualifier("db_xref", x))
+    for note_val in rna.note:
+        quals.append(MssQualifier("note", note_val))
+    quals.append(_submitter_note_ids(gene_id, tx_id))
+    return MssFeature(feat_key, location, quals)
+
 
 def build_noncoding_features(gene, locus_tag: str, seqlen: int, cfg) -> list:
     features = []
     for rna in gene.children:
         if rna.type in _STRUCTURAL:
             continue
-        feat_key = _RNA_MAP.get(rna.type, "misc_RNA")
-        spans = collect_spans(rna, "exon") or rna.spans
-        location = build_insdc_location(spans, seqlen)
-        quals = [MssQualifier("locus_tag", locus_tag)]
-        if feat_key == "ncRNA":
-            quals.append(MssQualifier("ncRNA_class", rna.type if rna.type != "ncRNA" else "other"))
-        if rna.product:
-            quals.append(MssQualifier("product", rna.product))
-        if gene.gene or rna.gene:
-            quals.append(MssQualifier("gene", gene.gene or rna.gene))
-        for note_val in rna.note:
-            quals.append(MssQualifier("note", note_val))
-        quals.append(_submitter_note(gene, rna))
-        features.append(MssFeature(feat_key, location, quals))
+        features.append(build_rna_feature(rna, locus_tag, seqlen, gene.id, rna.id,
+                                           gene.gene or rna.gene))
     return features
 
 
@@ -343,12 +366,19 @@ def build_entry_features(doc, seqs, cfg, diagnostics: list) -> dict:
         genome_seq = seqs[seqid]
         genes = [f for f in doc.roots if f.type == "gene"
                  and any(s.seqid == seqid for s in f.spans)]
-        items = [(_span_start(g), g) for g in genes]
+        parentless = [f for f in doc.roots
+                      if f.type in _PARENTLESS_RNA_TYPES
+                      and any(s.seqid == seqid for s in f.spans)]
+        items = [(_span_start(g), g) for g in genes] + [(_span_start(r), r) for r in parentless]
         items.sort(key=lambda t: t[0])
         feats: list = []
-        for _, gene in items:
-            feats.extend(build_gene_features(gene, cfg.transcript_mode, assigner,
-                                             genome_seq, cfg, diagnostics))
+        for _, feat in items:
+            if feat.type == "gene":
+                feats.extend(build_gene_features(feat, cfg.transcript_mode, assigner,
+                                                 genome_seq, cfg, diagnostics))
+            else:
+                feats.append(build_rna_feature(feat, assigner.assign(feat),
+                                                len(genome_seq), feat.id, feat.id, feat.gene))
         result[seqid] = feats
     return result
 
