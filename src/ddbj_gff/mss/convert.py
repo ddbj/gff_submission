@@ -322,32 +322,47 @@ def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> l
     return features
 
 
-def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
-    diagnostics: list = []
-    entries: list = []
-    # seqids in first-appearance order from the GFF features
+def _seqids_in_order(doc) -> list:
     seen: list = []
     for feat in doc.features:
         for s in feat.spans:
             if s.seqid not in seen:
                 seen.append(s.seqid)
+    return seen
 
+
+def build_entry_features(doc, seqs, cfg, diagnostics: list) -> dict:
+    """Per-seqid feature blocks (gene/RNA/misc). No source, no assembly_gap."""
     assigner = LocusTagAssigner.from_config(cfg)
-    for seqid in seen:
+    result: dict = {}
+    for seqid in _seqids_in_order(doc):
         if seqid not in seqs:
             diagnostics.append(Diagnostic(Severity.ERROR, None, "missing-sequence",
                                           f"seqid {seqid!r} not found in FASTA; entry skipped"))
             continue
         genome_seq = seqs[seqid]
-        features = [build_source_feature(seqid, len(genome_seq), cfg)]
-        features.extend(assembly_gap_features(str(genome_seq), cfg))
-        genes = [f for f in doc.roots if f.type == "gene" and any(s.seqid == seqid for s in f.spans)]
-        genes.sort(key=_span_start)
-        for gene in genes:
-            features.extend(build_gene_features(gene, cfg.transcript_mode, assigner,
-                                                genome_seq, cfg, diagnostics))
-        entries.append(MssEntry(seqid, features))
+        genes = [f for f in doc.roots if f.type == "gene"
+                 and any(s.seqid == seqid for s in f.spans)]
+        items = [(_span_start(g), g) for g in genes]
+        items.sort(key=lambda t: t[0])
+        feats: list = []
+        for _, gene in items:
+            feats.extend(build_gene_features(gene, cfg.transcript_mode, assigner,
+                                             genome_seq, cfg, diagnostics))
+        result[seqid] = feats
+    return result
 
+
+def convert(doc, seqs, cfg, common_rows, *, strict: bool = False):
+    diagnostics: list = []
+    per_entry = build_entry_features(doc, seqs, cfg, diagnostics)
+    entries: list = []
+    for seqid, feats in per_entry.items():
+        genome_seq = seqs[seqid]
+        entry_feats = [build_source_feature(seqid, len(genome_seq), cfg)]
+        entry_feats.extend(assembly_gap_features(str(genome_seq), cfg))
+        entry_feats.extend(feats)
+        entries.append(MssEntry(seqid, entry_feats))
     if strict:
         for d in diagnostics:
             if d.severity == Severity.ERROR:
