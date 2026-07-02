@@ -37,6 +37,16 @@ def test_product_defaults_to_hypothetical_no_gene_name_fallback():
     assert _product(mrna, gene, cfg) == "hypothetical protein"
 
 
+def test_product_from_cds_child_when_mrna_has_none():
+    # organelle LiftOff: product lives on the CDS, not the mRNA
+    mrna, gene = _mrna("g1.t1", "g1")
+    cds = Feature("cds1", "S", "CDS", [Span("c", 1, 9, "+")],
+                  {"product": ["50S ribosomal protein L5"]}, ["g1.t1"])
+    mrna.children = [cds]
+    cfg = MssConfig(source={})
+    assert _product(mrna, gene, cfg) == "50S ribosomal protein L5"
+
+
 def test_load_product_map_reads_tsv(tmp_path):
     p = tmp_path / "m.tsv"
     p.write_text("g1.t1\ttubulin\ng1\ttubulin\n", encoding="utf-8")

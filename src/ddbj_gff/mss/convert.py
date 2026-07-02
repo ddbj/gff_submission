@@ -140,6 +140,12 @@ def _product(mrna, gene, cfg: MssConfig) -> str:
     vals = mrna.attributes.get("product")
     if vals and vals[0]:
         return vals[0]
+    # col-9 product may live on the CDS child (e.g. organelle LiftOff annotations)
+    for c in mrna.children:
+        if c.type == "CDS":
+            cvals = c.attributes.get("product")
+            if cvals and cvals[0]:
+                return cvals[0]
     return cfg.product_default
 
 
