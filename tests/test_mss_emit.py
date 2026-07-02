@@ -1,5 +1,5 @@
 from ddbj_gff.mss.model import MssQualifier, MssFeature, MssEntry, MssDocument
-from ddbj_gff.mss.emit import emit_ann, emit_fasta
+from ddbj_gff.mss.emit import emit_ann, emit_fasta, feature_rows
 
 
 def test_emit_ann_column_rules():
@@ -49,3 +49,11 @@ def test_emit_ann_entry_name_resets_per_entry():
 def test_emit_fasta_multi_entry():
     out = emit_fasta({"chr1": "AAA", "chr2": "CCC"})
     assert out.splitlines() == [">chr1", "AAA", "//", ">chr2", "CCC", "//"]
+
+
+def test_feature_rows_first_row_carries_key_and_location():
+    feat = MssFeature("CDS", "1..9", [MssQualifier("locus_tag", "L_1"),
+                                       MssQualifier("product", "x")])
+    rows = feature_rows(feat)
+    assert rows[0] == ["", "CDS", "1..9", "locus_tag", "L_1"]
+    assert rows[1] == ["", "", "", "product", "x"]
