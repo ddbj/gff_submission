@@ -1,0 +1,14 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+##sequence-region CP187952.1 1 5125
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=3416947
+CP187952.1	Genbank	region	1	5125	.	+	.	ID=CP187952.1:1..5125;Dbxref=taxon:3416947;Is_circular=true;Name=ANONYMOUS;gbkey=Src;genome=chromosome;mol_type=genomic DNA;strain=TIOX60
+CP187952.1	Genbank	gene	562	771	.	+	.	ID=gene-ACPZ3T_00010;Name=ACPZ3T_00010;gbkey=Gene;gene_biotype=protein_coding;locus_tag=ACPZ3T_00010
+CP187952.1	Protein Homology	CDS	562	771	.	+	0	ID=cds-YFD46257.1;Parent=gene-ACPZ3T_00010;Dbxref=NCBI_GP:YFD46257.1;Name=YFD46257.1;gbkey=CDS;inference=COORDINATES: similar to AA sequence:RefSeq:WP_016862633.1;locus_tag=ACPZ3T_00010;product=TOBE domain-containing protein;protein_id=YFD46257.1;transl_table=11
+CP187952.1	Genbank	gene	2449	3372	.	+	.	ID=gene-ACPZ3T_29370;Name=ACPZ3T_29370;gbkey=Gene;gene_biotype=protein_coding;locus_tag=ACPZ3T_29370
+CP187952.1	Protein Homology	CDS	2449	3372	.	+	0	ID=cds-YFD46254.1;Parent=gene-ACPZ3T_29370;Dbxref=NCBI_GP:YFD46254.1;Name=YFD46254.1;gbkey=CDS;inference=COORDINATES: similar to AA sequence:RefSeq:WP_015141646.1;locus_tag=ACPZ3T_29370;product=molybdate ABC transporter substrate-binding protein;protein_id=YFD46254.1;transl_table=11
+CP187952.1	Genbank	gene	3467	4279	.	+	.	ID=gene-ACPZ3T_29375;Name=ACPZ3T_29375;gbkey=Gene;gene_biotype=protein_coding;locus_tag=ACPZ3T_29375
+CP187952.1	Protein Homology	CDS	3467	4279	.	+	0	ID=cds-YFD46255.1;Parent=gene-ACPZ3T_29375;Dbxref=NCBI_GP:YFD46255.1;Name=YFD46255.1;gbkey=CDS;inference=COORDINATES: similar to AA sequence:RefSeq:WP_015141647.1;locus_tag=ACPZ3T_29375;product=PEP-CTERM sorting domain-containing protein;protein_id=YFD46255.1;transl_table=11
+CP187952.1	Genbank	gene	4447	5268	.	-	.	ID=gene-ACPZ3T_00005;Name=modA;gbkey=Gene;gene=modA;gene_biotype=protein_coding;locus_tag=ACPZ3T_00005
+CP187952.1	Protein Homology	CDS	4447	5268	.	-	0	ID=cds-YFD46256.1;Parent=gene-ACPZ3T_00005;Dbxref=NCBI_GP:YFD46256.1;Name=YFD46256.1;gbkey=CDS;gene=modA;inference=COORDINATES: similar to AA sequence:RefSeq:WP_015141652.1;locus_tag=ACPZ3T_00005;product=molybdate ABC transporter substrate-binding protein;protein_id=YFD46256.1;transl_table=11
