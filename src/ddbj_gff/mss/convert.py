@@ -133,12 +133,13 @@ def build_mrna_feature(mrna, gene, locus_tag: str, seqlen: int) -> MssFeature:
 
 
 def _product(mrna, gene, cfg: MssConfig) -> str:
+    pmap = cfg.product_map or {}
+    hit = pmap.get(mrna.id) or (pmap.get(gene.id) if gene and gene.id else None)
+    if hit:
+        return hit
     vals = mrna.attributes.get("product")
-    if vals:
+    if vals and vals[0]:
         return vals[0]
-    if gene.gene or mrna.gene:
-        name = gene.gene or mrna.gene
-        return f"protein {name}"
     return cfg.product_default
 
 

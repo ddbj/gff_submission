@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ..errors import Diagnostic, GffParseError, Severity
 
@@ -24,6 +24,8 @@ class MssConfig:
     gap_linkage_evidence: str = "align genus"
     gap_estimated_length: str = "known"
     product_default: str = "hypothetical protein"
+    product_map_path: str | None = None
+    product_map: dict = field(default_factory=dict)
     transcript_mode: str = "nonredundant"
 
 
@@ -74,6 +76,7 @@ def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
         gap_linkage_evidence=gap.get("linkage_evidence", "align genus"),
         gap_estimated_length=gap.get("estimated_length", "known"),
         product_default=product.get("default", "hypothetical protein"),
+        product_map_path=product.get("map"),
         transcript_mode=mode,
     )
     for required in ("organism", "mol_type"):

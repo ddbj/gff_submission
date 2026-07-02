@@ -52,12 +52,12 @@ def test_codon_start_from_phase():
     assert any(d.code == "translation-not-multiple-of-3" for d in diags)
 
 
-def test_product_protein_gene_default():
+def test_product_defaults_to_hypothetical_when_only_gene_name():
     genome = Seq("ATGAAATAA")
     gene, mrna = mrna_with_cds([(1, 9)], strand="+", phase0=0, mrna_attr={"gene": ["MpX"]})
     f = build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), [])
     q = {x.key: x.value for x in f.qualifiers}
-    assert q["product"] == "protein MpX"
+    assert q["product"] == "hypothetical protein"  # "protein MpX" フォールバックは廃止
     assert q["gene"] == "MpX"
 
 
