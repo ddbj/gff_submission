@@ -262,6 +262,8 @@ _NCRNA_KNOWN = {"snRNA", "snoRNA", "miRNA", "siRNA", "scRNA", "antisense_RNA",
 
 # GFF Dbxref prefixes -> INSDC controlled db_xref database names (case-sensitive)
 _DBXREF_ALIAS = {"RFAM": "Rfam", "rfam": "Rfam"}
+# databases DDBJ MSS does not accept as a /db_xref value (kept in the feature note instead)
+_DBXREF_SKIP = {"Rfam"}
 
 
 def _canon_dbxref(value: str) -> str:
@@ -292,7 +294,10 @@ def build_rna_feature(rna, locus_tag: str, seqlen: int, gene_id: str, tx_id: str
     if gene_name:
         quals.append(MssQualifier("gene", gene_name))
     for x in rna.dbxref:
-        quals.append(MssQualifier("db_xref", _canon_dbxref(x)))
+        canon = _canon_dbxref(x)
+        if canon.partition(":")[0] in _DBXREF_SKIP:
+            continue  # DDBJ MSS rejects e.g. Rfam as db_xref; the id stays in the note
+        quals.append(MssQualifier("db_xref", canon))
     for note_val in rna.note:
         quals.append(MssQualifier("note", note_val))
     for note_val in rna.attributes.get("note", []):
