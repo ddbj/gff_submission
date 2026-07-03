@@ -357,7 +357,8 @@ def build_gene_features(gene, mode, assigner, genome_seq, cfg, diagnostics) -> l
         if cds is not None and cds.key == "misc_feature":
             misc_feats.append(cds)
             continue
-        features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
+        if cfg.emit_mrna:
+            features.append(build_mrna_feature(mrna, gene, locus_tag, len(genome_seq)))
         if cds is None:
             continue
         if mode == "nonredundant":

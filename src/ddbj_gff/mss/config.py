@@ -27,6 +27,7 @@ class MssConfig:
     product_map_path: str | None = None
     product_map: dict = field(default_factory=dict)
     transcript_mode: str = "nonredundant"
+    emit_mrna: bool = True   # organelle/prokaryotic profiles set False (CDS only, no mRNA feature)
 
 
 def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
@@ -78,6 +79,7 @@ def load_config(path: str) -> tuple[MssConfig, list[Diagnostic]]:
         product_default=product.get("default", "hypothetical protein"),
         product_map_path=product.get("map"),
         transcript_mode=mode,
+        emit_mrna=transcript.get("emit_mrna", True),
     )
     for required in ("organism", "mol_type"):
         if required not in source_qual:

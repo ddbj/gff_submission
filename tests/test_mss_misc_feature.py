@@ -30,6 +30,20 @@ def test_internal_stop_returns_misc_feature():
     assert any(x.key == "note" and "internal stop" in x.value.lower() for x in f.qualifiers)
 
 
+def test_emit_mrna_false_suppresses_mrna_keeps_cds():
+    # organelle profile: CDS only, no mRNA feature
+    gene = Feature("g", "S", "gene", [Span("c", 1, 9, "+")], {"ID": ["g"]}, [])
+    mrna = Feature("g.t1", "S", "mRNA", [Span("c", 1, 9, "+")], {"ID": ["g.t1"]}, ["g"])
+    cds = Feature("cds", "S", "CDS", [Span("c", 1, 9, "+", 0)], {"ID": ["cds"]}, ["g.t1"])
+    mrna.children = [cds]
+    gene.children = [mrna]
+    cfg2 = MssConfig(source={}, transl_table=1, product_default="hypothetical protein", emit_mrna=False)
+    feats = build_gene_features(gene, "nonredundant", LocusTagAssigner("L", 6, 10, 10),
+                                Seq("ATGAAATAA"), cfg2, [])
+    keys = [f.key for f in feats]
+    assert "mRNA" not in keys and "CDS" in keys
+
+
 def test_gene_with_internal_stop_emits_only_misc_feature():
     gene, mrna, genome = _gene_with_internal_stop()
     assigner = LocusTagAssigner("L", 6, 10, 10)
