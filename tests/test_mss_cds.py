@@ -61,6 +61,16 @@ def test_product_defaults_to_hypothetical_when_only_gene_name():
     assert q["gene"] == "MpX"
 
 
+def test_three_prime_partial_frame_aware():
+    # 8 nt CDS (length not a multiple of 3). In-frame codons: ATG, AAT -> last codon AAT
+    # (not a stop) => 3' partial. The trailing 3 bases "TAA" must NOT be mistaken for a stop.
+    genome = Seq("ATGAATAA")
+    gene, mrna = mrna_with_cds([(1, 8)], strand="+", phase0=0)
+    f = build_cds_feature(mrna, gene, "PFX_000010", genome, cfg(), [])
+    assert f.key == "CDS"
+    assert f.location == "1..>8"
+
+
 def test_multi_span_join_complete():
     genome = Seq("ATGCCCTAA")  # join(1..3,7..9) -> ATG+TAA = ATGTAA -> M*
     gene, mrna = mrna_with_cds([(1, 3), (7, 9)], strand="+", phase0=0)

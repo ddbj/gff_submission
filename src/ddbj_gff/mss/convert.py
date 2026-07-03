@@ -170,8 +170,11 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
 
     cds_seq = extract_seq(spans, genome_seq)
     coding = str(cds_seq[codon_start - 1:]).upper()
+    coding_full = coding[: len(coding) - len(coding) % 3]
     first_codon = coding[:3]
-    last_codon = str(cds_seq[-3:]).upper()
+    # last codon must be evaluated in-frame (coding_full), not the trailing 3 bases:
+    # a CDS whose length is not a multiple of 3 otherwise misjudges 3' completeness.
+    last_codon = coding_full[-3:] if len(coding_full) >= 3 else ""
     five_prime_partial = codon_start != 1 or first_codon not in table.start_codons
     three_prime_partial = last_codon not in table.stop_codons
 
@@ -179,7 +182,6 @@ def build_cds_feature(mrna, gene, locus_tag: str, genome_seq, cfg: MssConfig,
     if len(coding) % 3 != 0:
         diagnostics.append(Diagnostic(Severity.WARNING, None, "translation-not-multiple-of-3",
                                       f"CDS {mrna.id!r} coding length not a multiple of 3"))
-    coding_full = coding[: len(coding) - len(coding) % 3]
     cds_feat = next((c for c in mrna.children if c.type == "CDS"), None)
     excepts = _collect_transl_excepts(cds_feat) if cds_feat is not None else []
     if excepts:

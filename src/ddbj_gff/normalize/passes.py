@@ -196,6 +196,50 @@ def pass_coerce_transcript_to_mrna(doc, ctx) -> list:
     return changes
 
 
+def pass_wrap_cds_in_mrna(doc, ctx) -> list:
+    """Insert an mRNA level for genes whose CDS/exon hang directly off the gene.
+
+    Common in organelle LiftOff output (gene -> CDS). tRNA/ncRNA genes
+    (gene -> tRNA/ncRNA -> exon) already have a transcript level and are left alone.
+    """
+    changes: list = []
+    if not getattr(ctx.config, "wrap_cds_in_mrna", True):
+        return changes
+    struct = {"CDS", "exon"}
+    new_mrnas: list = []
+    for gene in list(doc.features):
+        if gene.type != "gene":
+            continue
+        if any(c.type in ("mRNA", "transcript") for c in gene.children):
+            continue
+        wrapped = [c for c in gene.children if c.type in struct]
+        if not any(c.type == "CDS" for c in wrapped):
+            continue
+        seqid = wrapped[0].spans[0].seqid
+        strand = wrapped[0].spans[0].strand
+        lo = min(s.start for c in wrapped for s in c.spans)
+        hi = max(s.end for c in wrapped for s in c.spans)
+        mid = f"{gene.id}.mrna"
+        mrna = Feature(mid, gene.source, "mRNA", [Span(seqid, lo, hi, strand)],
+                       {"ID": [mid], "Parent": [gene.id]}, [gene.id])
+        for c in wrapped:
+            c.parent_ids = [mid]
+            c.parents = [mrna]
+            if "Parent" in c.attributes:
+                c.attributes["Parent"] = [mid]
+            mrna.children.append(c)
+        mrna.parents = [gene]
+        gene.children = [c for c in gene.children if c.type not in struct] + [mrna]
+        new_mrnas.append(mrna)
+        changes.append(Change("add-child-feature", mid,
+                              f"wrapped {len(wrapped)} CDS/exon of {gene.id!r} in an mRNA"))
+    for m in new_mrnas:
+        doc.features.append(m)
+        if m.id:
+            doc.feature_index[m.id] = m
+    return changes
+
+
 def pass_anticodon(doc, ctx) -> list:
     changes: list = []
     pending: list = []
