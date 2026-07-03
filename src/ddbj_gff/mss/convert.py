@@ -260,6 +260,15 @@ _NCRNA_KNOWN = {"snRNA", "snoRNA", "miRNA", "siRNA", "scRNA", "antisense_RNA",
                 "guide_RNA", "vault_RNA", "Y_RNA", "autocatalytically_spliced_intron"}
 
 
+# GFF Dbxref prefixes -> INSDC controlled db_xref database names (case-sensitive)
+_DBXREF_ALIAS = {"RFAM": "Rfam", "rfam": "Rfam"}
+
+
+def _canon_dbxref(value: str) -> str:
+    db, sep, acc = value.partition(":")
+    return f"{_DBXREF_ALIAS.get(db, db)}{sep}{acc}" if sep else value
+
+
 def _submitter_note_ids(gene_id, tx_id) -> MssQualifier:
     return MssQualifier("note", f"submitter_gene_id: {gene_id}, submitter_transcript_id: {tx_id}")
 
@@ -283,7 +292,7 @@ def build_rna_feature(rna, locus_tag: str, seqlen: int, gene_id: str, tx_id: str
     if gene_name:
         quals.append(MssQualifier("gene", gene_name))
     for x in rna.dbxref:
-        quals.append(MssQualifier("db_xref", x))
+        quals.append(MssQualifier("db_xref", _canon_dbxref(x)))
     for note_val in rna.note:
         quals.append(MssQualifier("note", note_val))
     for note_val in rna.attributes.get("note", []):

@@ -22,7 +22,7 @@ def test_parentless_rna_emitted_as_toplevel_with_locus_tag():
     nc = {q.key: q.value for q in per["c1"][0].qualifiers}
     assert nc["locus_tag"] == "PFX_000010"
     assert nc["ncRNA_class"] == "other"  # RFAM 由来の未知クラスは other
-    assert any(q.key == "db_xref" and q.value == "RFAM:RF00003" for q in per["c1"][0].qualifiers)
+    assert any(q.key == "db_xref" and q.value == "Rfam:RF00003" for q in per["c1"][0].qualifiers)
     rr = {q.key: q.value for q in per["c1"][2].qualifiers}
     assert rr["product"] == "18S ribosomal RNA"
     tr = {q.key: q.value for q in per["c1"][1].qualifiers}
