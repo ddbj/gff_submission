@@ -280,3 +280,30 @@ def pass_anticodon(doc, ctx) -> list:
                 del f.attributes["anticodon"]
     _attach_children(doc, pending)
     return changes
+
+
+def pass_circular_origin(doc, ctx) -> list:
+    """Propagate Is_circular=true onto origin-spanning features (a span with
+    end>seqlen) on a circular landmark. Coordinates are left as-is (canonical keeps
+    the INSDC end>seqlen convention); the flag lets validate/downstream treat the
+    feature as circular."""
+    changes: list = []
+    circular = doc.circular_seqids
+    if not circular:
+        return changes
+    regions = doc.sequence_regions
+    for f in doc.features:
+        for s in f.spans:
+            if s.seqid not in circular:
+                continue
+            seqlen = regions.get(s.seqid, (None, None))[1]
+            if seqlen is None and ctx.seq_lengths:
+                seqlen = ctx.seq_lengths.get(s.seqid)
+            if seqlen is not None and s.end > seqlen:
+                if f.attributes.get("Is_circular") != ["true"]:
+                    f.attributes["Is_circular"] = ["true"]
+                    changes.append(Change("add-qualifier", f.id or "?",
+                                          f"propagated Is_circular=true to origin-spanning "
+                                          f"feature (span {s.start}..{s.end} > seqlen {seqlen})"))
+                break
+    return changes
