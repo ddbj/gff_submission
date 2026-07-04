@@ -48,8 +48,8 @@ def rule_ascii(doc, vocab) -> list:
 def rule_seqid_bounds(doc, vocab) -> list:
     diags = []
     regions = doc.sequence_regions
+    circular_seqids = doc.circular_seqids
     for f in doc.features:
-        circular = f.is_circular
         for s in f.spans:
             if s.seqid not in regions:
                 diags.append(make_diagnostic("undefined-seqid",
@@ -57,7 +57,12 @@ def rule_seqid_bounds(doc, vocab) -> list:
                                              f"with no ##sequence-region"))
                 continue
             lo, hi = regions[s.seqid]
-            if (s.start < lo or s.end > hi) and not circular:
+            circular = f.is_circular or s.seqid in circular_seqids
+            if s.start < lo:
+                diags.append(make_diagnostic("feature-outside-region",
+                                             f"feature {f.id!r} span {s.start}..{s.end} is outside "
+                                             f"sequence-region {s.seqid}:{lo}..{hi}"))
+            elif s.end > hi and not circular:
                 diags.append(make_diagnostic("feature-outside-region",
                                              f"feature {f.id!r} span {s.start}..{s.end} is outside "
                                              f"sequence-region {s.seqid}:{lo}..{hi}"))

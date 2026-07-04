@@ -58,3 +58,18 @@ def test_start_gt_end():
     f = Feature("a", "S", "gene", [Span("c", 50, 10, "+")], {}, [])
     doc = GffDocument(features=[f])
     assert "start-gt-end" in codes(rules.rule_start_gt_end(doc, V))
+
+
+def test_seqid_bounds_circular_landmark_allows_origin_spanning():
+    region = Feature("r", "S", "region", [Span("c", 1, 100, "+")], {"Is_circular": ["true"]}, [])
+    seq_dir = Directive("x", "sequence-region", ("c", 1, 100))
+    cds = Feature("a", "S", "CDS", [Span("c", 90, 130, "+")], {}, [])  # flag on region, not cds
+    doc = GffDocument(directives=[seq_dir], features=[region, cds])
+    assert "feature-outside-region" not in codes(rules.rule_seqid_bounds(doc, V))
+
+
+def test_seqid_bounds_noncircular_end_beyond_region_flagged():
+    seq_dir = Directive("x", "sequence-region", ("c", 1, 100))
+    cds = Feature("a", "S", "CDS", [Span("c", 90, 130, "+")], {}, [])
+    doc = GffDocument(directives=[seq_dir], features=[cds])
+    assert "feature-outside-region" in codes(rules.rule_seqid_bounds(doc, V))
