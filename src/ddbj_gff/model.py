@@ -178,6 +178,16 @@ class GffDocument:
         return out
 
     @property
+    def circular_seqids(self) -> set[str]:
+        """Seqids whose landmark feature (region/source) is marked Is_circular=true."""
+        out: set[str] = set()
+        for f in self.features:
+            if f.type in ("region", "source") and f.is_circular:
+                for s in f.spans:
+                    out.add(s.seqid)
+        return out
+
+    @property
     def transl_table_map(self) -> dict | None:
         d = self._directive("transl_table")
         return d.value if d else None
