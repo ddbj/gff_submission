@@ -1,7 +1,7 @@
 [project]
 name = "ddbj-gff"
 version = "0.1.0"
-description = "INSDC/SO GFF3 parser and object model (DDBJ GFF tools, phase 1)"
+description = "INSDC/SO GFF3 canonicalization library (parser, object model, normalize, validate)"
 requires-python = ">=3.11"
 dependencies = ["biopython>=1.83"]
 
