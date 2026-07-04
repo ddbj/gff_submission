@@ -14,8 +14,10 @@ Minimal, self-contained test data for the **circular / origin-spanning** case
 
 Gene/CDS **ACPZ3T_00005** (`modA`, molybdate ABC transporter substrate-binding
 protein, `protein_id=YFD46256.1`, `transl_table=11`) is a minus-strand CDS that
-wraps the origin. In the real record it is `complement(join(1..143, 6706446..6707124))`,
-which NCBI GFF3 writes as a **single row with `end > seqlen`**:
+wraps the origin. In the real record it is `complement(join(6706446..6707124, 1..143))`
+(the `P_head` piece touching the origin comes first inside the join, so the arc
+…6707124 | 1… stays contiguous), which NCBI GFF3 writes as a **single row with
+`end > seqlen`**:
 
 ```
 CP187952.1  Genbank  gene  6706446  6707267  .  -  .  ...locus_tag=ACPZ3T_00005
@@ -49,8 +51,10 @@ Re-based features (real → small):
 | ACPZ3T_29375 | PEP-CTERM sorting domain-containing protein | 6705466..6706278 | 3467..4279 | + |
 | **ACPZ3T_00005 (modA)** | molybdate ABC transporter substrate-binding protein | 6706446..6707267 | **4447..5268** | − |
 
-The origin-spanning modA CDS in the fixture is `complement(join(1..143, 4447..5125))`,
-written as `4447..5268` with `end 5268 > seqlen 5125` (822 bp = 274 codons).
+The origin-spanning modA CDS in the fixture is `complement(join(4447..5125, 1..143))`,
+written as `4447..5268` with `end 5268 > seqlen 5125` (822 bp = 274 codons). Verified:
+this order translates to `MKL…*` (274 codons, 0 internal stops); the reversed
+`complement(join(1..143,4447..5125))` gives 24 internal stops.
 
 ## Files
 
