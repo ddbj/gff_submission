@@ -71,10 +71,13 @@ def synthesize_features(rec, seqid) -> list:
     """Group flatfile mRNA/CDS/RNA by locus_tag into canonical gene->mRNA->exon/CDS."""
     bio = [f for f in rec.features if f.type in _RNA_TYPES or f.type == "CDS"]
     groups = OrderedDict()
-    for f in bio:
-        groups.setdefault(_locus_tag(f), []).append(f)
+    for i, f in enumerate(bio):
+        lt = _locus_tag(f)
+        key = lt if lt is not None else f"__no_locus_tag__{i}"
+        groups.setdefault(key, []).append(f)
 
     out: list = []
+    used_ids: set = set()
     for lt, members in groups.items():
         gene_id = f"gene-{lt}" if lt else f"gene-{len(out)}"
         mrnas = [f for f in members if f.type == "mRNA"]
@@ -144,7 +147,13 @@ def synthesize_features(rec, seqid) -> list:
                 cspans = bio_location_to_spans(c.location, seqid, is_cds=True,
                     codon_start=int(c.qualifiers.get("codon_start", ["1"])[0]))
                 c_attrs = qualifiers_to_attrs(c)
-                c_id = f"cds-{c.qualifiers.get('protein_id', [tx_id])[0]}"
+                base = f"cds-{c.qualifiers.get('protein_id', [tx_id])[0]}"
+                c_id = base
+                _n = 1
+                while c_id in used_ids:
+                    _n += 1
+                    c_id = f"{base}-{_n}"
+                used_ids.add(c_id)
                 c_attrs["ID"] = [c_id]
                 c_attrs["Parent"] = [tx_id]
                 out.append(Feature(c_id, "DDBJ", "CDS", cspans, c_attrs, [tx_id]))
