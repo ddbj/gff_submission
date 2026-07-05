@@ -149,3 +149,53 @@ def synthesize_features(rec, seqid) -> list:
                 c_attrs["Parent"] = [tx_id]
                 out.append(Feature(c_id, "DDBJ", "CDS", cspans, c_attrs, [tx_id]))
     return out
+
+
+from ..model import GffDocument
+from ..normalize.normalize import normalize
+from ..normalize.config import NormalizeConfig
+from .molecule import detect_molecule
+
+
+def _region_feature(rec, mol, seqid):
+    src = next((f for f in rec.features if f.type == "source"), None)
+    attrs = {"ID": [f"{seqid}:1..{len(rec.seq)}"]}
+    if mol.taxid:
+        attrs["Dbxref"] = [f"taxon:{mol.taxid}"]
+    if mol.topology == "circular":
+        attrs["Is_circular"] = ["true"]
+    if src is not None:
+        for k in ("mol_type", "organism", "submitter_seqid", "chromosome", "organelle"):
+            if src.qualifiers.get(k):
+                attrs[k] = list(src.qualifiers[k])
+    return Feature(attrs["ID"][0], "DDBJ", "region",
+                   [Span(seqid, 1, len(rec.seq), "+")], attrs, [])
+
+
+def _link_features(feats: list) -> tuple[dict, list]:
+    """Populate feature_index and children/parents links (mirrors parser._resolve_graph).
+    Building a GffDocument by hand (rather than via parse()) skips that wiring, which
+    both validate.rule_parents (checks doc.feature_index) and normalize passes like
+    pass_wrap_cds_in_mrna/pass_coerce_transcript_to_mrna (walk f.children) require."""
+    feature_index = {f.id: f for f in feats if f.id}
+    for f in feats:
+        for pid in f.parent_ids:
+            parent = feature_index.get(pid)
+            if parent is not None:
+                parent.children.append(f)
+                f.parents.append(parent)
+    roots = [f for f in feats if not f.parent_ids]
+    return feature_index, roots
+
+
+def flatfile_to_gff(rec) -> GffDocument:
+    mol = detect_molecule(rec)
+    seqid = rec.id
+    feats = [_region_feature(rec, mol, seqid)] + synthesize_features(rec, seqid)
+    feature_index, roots = _link_features(feats)
+    doc = GffDocument(directives=[], features=feats, feature_index=feature_index,
+                      roots=roots, fasta={seqid: str(rec.seq)})
+    norm, _report = normalize(doc, seq_lengths={seqid: len(rec.seq)},
+                              config=NormalizeConfig(taxid=mol.taxid,
+                                                     transl_table=mol.transl_table))
+    return norm
