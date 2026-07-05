@@ -1,0 +1,13 @@
+##gff-version 3
+#!gff-spec-version 1.21
+##sequence-region AP025455.1 1 1754
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=1480154
+AP025455.1	DDBJ	gene	855	1754	.	-	.	ID=gene-Mp_Cg00010;Name=rps12;gbkey=Gene;gene=rps12;gene_biotype=protein_coding;is_ordered=true;locus_tag=Mp_Cg00010;part=1
+AP025455.1	DDBJ	gene	1	854	.	?	.	ID=gene-Mp_Cg00010;Name=rps12;gbkey=Gene;gene=rps12;gene_biotype=protein_coding;is_ordered=true;locus_tag=Mp_Cg00010;part=2
+AP025455.1	DDBJ	CDS	1641	1754	.	-	0	ID=cds-BDD77285.1;Parent=gene-Mp_Cg00010;Dbxref=NCBI_GP:BDD77285.1;Name=BDD77285.1;Note=30S ribosomal protein S12%3B~trans splicing of rps12 intron 1;exception=trans-splicing;gbkey=CDS;gene=rps12;locus_tag=Mp_Cg00010;part=1;product=ribosomal protein S12;protein_id=BDD77285.1;transl_table=11
+AP025455.1	DDBJ	CDS	93	324	.	+	0	ID=cds-BDD77285.1;Parent=gene-Mp_Cg00010;Dbxref=NCBI_GP:BDD77285.1;Name=BDD77285.1;Note=30S ribosomal protein S12%3B~trans splicing of rps12 intron 1;exception=trans-splicing;gbkey=CDS;gene=rps12;locus_tag=Mp_Cg00010;part=2;product=ribosomal protein S12;protein_id=BDD77285.1;transl_table=11
+AP025455.1	DDBJ	CDS	829	854	.	+	2	ID=cds-BDD77285.1;Parent=gene-Mp_Cg00010;Dbxref=NCBI_GP:BDD77285.1;Name=BDD77285.1;Note=30S ribosomal protein S12%3B~trans splicing of rps12 intron 1;exception=trans-splicing;gbkey=CDS;gene=rps12;locus_tag=Mp_Cg00010;part=3;product=ribosomal protein S12;protein_id=BDD77285.1;transl_table=11
+AP025455.1	DDBJ	intron	855	1640	.	-	.	ID=id-Mp_Cg00010;Parent=gene-Mp_Cg00010;Note=intron 1 for the trans-spliced transcript of rps12;exception=trans-splicing;exon_number=1;gbkey=intron;gene=rps12;locus_tag=Mp_Cg00010;number=1;part=1
+AP025455.1	DDBJ	intron	1	92	.	+	.	ID=id-Mp_Cg00010;Parent=gene-Mp_Cg00010;Note=intron 1 for the trans-spliced transcript of rps12;exception=trans-splicing;exon_number=1;gbkey=intron;gene=rps12;locus_tag=Mp_Cg00010;number=1;part=2
+AP025455.1	DDBJ	gene	325	828	.	+	.	ID=gene-Mp_Cg00010-2;Name=rps12;gbkey=Gene;gene=rps12;gene_biotype=other;locus_tag=Mp_Cg00010
+AP025455.1	DDBJ	intron	325	828	.	+	.	ID=id-Mp_Cg00010-2;Parent=gene-Mp_Cg00010-2;Note=intron 2 for the trans-spliced transcript of rps12;exon_number=2;gbkey=intron;gene=rps12;locus_tag=Mp_Cg00010;number=2

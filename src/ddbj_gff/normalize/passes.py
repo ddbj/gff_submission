@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from ..model import Directive, Feature, Span
 from .. import aa_names
 from .report import Change
+from Bio.SeqFeature import FeatureLocation, CompoundLocation
+from Bio.SeqIO.InsdcIO import _insdc_location_string
 
 _SPECIES_URL = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id={taxid}"
 
@@ -306,4 +308,28 @@ def pass_circular_origin(doc, ctx) -> list:
                                           f"propagated Is_circular=true to origin-spanning "
                                           f"feature (span {s.start}..{s.end} > seqlen {seqlen})"))
                 break
+    return changes
+
+
+def pass_trans_splicing_location(doc, ctx) -> list:
+    """Build the canonical INSDC location=join(...) attribute for trans-spliced
+    multi-part features. Per-part strand: '-' -> complement, '+'/'?'/'.' -> forward;
+    parts kept in feature.ordered_spans() order (honors is_ordered). An existing
+    location= is authoritative (may be remote) and is left untouched."""
+    changes: list = []
+    regions = doc.sequence_regions
+    for f in doc.features:
+        if not f.is_trans_spliced or len(f.spans) < 2 or f.attributes.get("location"):
+            continue
+        parts = f.ordered_spans()
+        seqlen = regions.get(parts[0].seqid, (None, None))[1]
+        if seqlen is None and ctx.seq_lengths:
+            seqlen = ctx.seq_lengths.get(parts[0].seqid)
+        seqlen = seqlen or max(s.end for s in parts)
+        locs = [FeatureLocation(s.start - 1, s.end, strand=(-1 if s.strand == "-" else 1))
+                for s in parts]
+        loc_str = _insdc_location_string(CompoundLocation(locs), seqlen)
+        f.attributes["location"] = [loc_str]
+        changes.append(Change("add-qualifier", f.id or "?",
+                              f"built location={loc_str} for trans-spliced feature"))
     return changes
