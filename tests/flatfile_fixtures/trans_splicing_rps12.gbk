@@ -1,0 +1,69 @@
+LOCUS       AP025455                1754 bp    DNA     circular PLN 01-JAN-1980
+DEFINITION  Marchantia polymorpha chloroplast rps12 trans-splicing flatfile
+            fixture (re-coordinatized excerpt).
+ACCESSION   AP025455
+VERSION     AP025455
+KEYWORDS    .
+SOURCE      .
+  ORGANISM  Marchantia polymorpha subsp. ruderalis
+            Eukaryota; Viridiplantae; Streptophyta; Marchantiophyta.
+FEATURES             Location/Qualifiers
+     source          1..1754
+                     /organism="Marchantia polymorpha subsp. ruderalis"
+                     /organelle="plastid:chloroplast"
+                     /mol_type="genomic DNA"
+                     /db_xref="taxon:1480154"
+                     /strain="Tak-1"
+     CDS             join(complement(1641..1754),93..324,829..854)
+                     /gene="rps12"
+                     /locus_tag="Mp_Cg00010"
+                     /product="ribosomal protein S12"
+                     /protein_id="BDD77285.1"
+                     /transl_table=11
+                     /codon_start=1
+                     /trans_splicing=""
+                     /note="30S ribosomal protein S12; trans splicing of rps12
+                     intron 1"
+     intron          join(complement(855..1640),1..92)
+                     /gene="rps12"
+                     /locus_tag="Mp_Cg00010"
+                     /number=1
+                     /trans_splicing=""
+                     /note="intron 1 for the trans-spliced transcript of rps12"
+     intron          325..828
+                     /gene="rps12"
+                     /locus_tag="Mp_Cg00010"
+                     /number=2
+                     /note="intron 2 for the trans-spliced transcript of rps12"
+ORIGIN
+        1 caaaaaattt gaacgagaag ccgtatgaaa tgaaaatatc aagtacggtt ttgtaaagtg
+       61 acgatttagg taacttattt gtcaactttt ccactacaac accaaaaaaa ccaaactctg
+      121 ccttacgaaa aatagctcga gttagactaa cctctggatt tgagattact gcatatattc
+      181 caggtattgg ccataatttg caagaacatt cagttgtttt agtaagagga ggaagggtca
+      241 aagatttacc tggtgtaaga tatcatatta ttagaggaac actggatgct gtaggagtaa
+      301 aagatcgtca acaagggcgt tctagtgcgt tgtatattat aatttcttaa aatgtatcat
+      361 tttagatacc taatttattg ctgagaatat gtaaaaaata gctaaccaat gattaaaatt
+      421 tacattttaa aacggaaaaa aagcaggcta tatgtatata aaataaaata taatctatat
+      481 tatatactat acaatatcta gggttttatt tgtagttaaa ataaaaattg aagttttccc
+      541 ttacttttga attcaaaatt aaaaaatttt gactttttta gaacaagtta aaataaatag
+      601 caaaaattga aaaaaaattt atttttatac aatattttta taaataaaat aaacctaagg
+      661 atttttttct ttaacgatta taaaatacaa gatttccaat agtaaaacat tggaaacgga
+      721 tactcaatta aaagtgagta aacatcaata aaatttaatg atgtaaaaag ccgtattcgt
+      781 tgaaaatcgg atgtacggtt tggagggaga tccaaaaatc caccctacaa tatggagtaa
+      841 aaaagtcaaa ataatgctgt atatactcgt tttaattatt caaaaatttg tgtgtgtgta
+      901 tttttttata tcaaaaaatt gattttcaat aaatattttt tttattgcag tttgtttact
+      961 ataatctaca atttttataa ttaaaaagtt ttattttatt ttcttagatt gctataaaaa
+     1021 atgtcttcgt tttcttatgt ataaaaaaaa aataccaaaa gcgtttgcta ctataacctt
+     1081 ccttaataat aattttgtta ggtgtgatac cttcttagta attaagggat aggaccttta
+     1141 actaagaaaa attatgcatt cctttgtttc tatagtttct ccttcaacga ataggtcctt
+     1201 tctatatacc gaagcttgta atatataata tatatttata atatcagtta tttgtataat
+     1261 ttctgatttt aagctttttt ttattaatga aacattcaaa agtttcaaaa ttgttttttt
+     1321 tattaattaa cggtatgtta tttgaaagtt tgctggatag ctgaccgttc agtttcgctt
+     1381 ttacggttat ataagtaata ttatattatg caaaaattat ttaattaaat ttctcgctta
+     1441 agggattgag aatcagtcgc taccctttga gaaatggctt tctatcttaa acttaagatg
+     1501 attggatttg caccaaagga aactataaat tggatctaaa caacaataga tactatatct
+     1561 ttacgttatt aaaataataa aaatttttat gcagttttga tctttaaatt tttaacgttt
+     1621 ttgatttaaa caagtcgcac atacactcta gtacatactc ctctacgttg agggcatcct
+     1681 ttaagggctg gtgattttgt tctattttcg attggttgtc ttttatttct aattaattgt
+     1741 tgaatagtag gcat
+//
