@@ -11,7 +11,7 @@ _QUAL_MAP = {
     "transl_table": "transl_table", "db_xref": "Dbxref", "pseudo": "pseudo",
     "ncRNA_class": "ncRNA_class",
 }
-_DROP_QUALS = {"translation", "codon_start"}
+_DROP_QUALS = {"translation", "codon_start", "trans_splicing"}
 
 
 def bio_location_to_spans(location, seqid, *, is_cds, codon_start=1):
@@ -52,6 +52,22 @@ _BIOTYPE = {"CDS": "protein_coding", "mRNA": "protein_coding",
 
 def _locus_tag(f):
     return f.qualifiers.get("locus_tag", [None])[0]
+
+
+def _is_trans(feature) -> bool:
+    """True if the flatfile feature carries a /trans_splicing qualifier."""
+    return "trans_splicing" in feature.qualifiers
+
+
+def _mark_trans_spliced(attrs: dict, spans: list) -> None:
+    """Mark a synthesized feature as trans-spliced in canonical form: set
+    exception=trans-splicing + is_ordered=true and number the spans part=1,2,...
+    in their given (biological 5'->3') order. normalize.pass_trans_splicing_location
+    then builds location=join(...) from these."""
+    attrs["exception"] = ["trans-splicing"]
+    attrs["is_ordered"] = ["true"]
+    for i, s in enumerate(spans, 1):
+        s.part = i
 
 
 def _cds_within(cds_spans, mrna_spans) -> bool:
