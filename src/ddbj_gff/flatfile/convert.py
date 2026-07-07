@@ -85,7 +85,8 @@ def _shared_boundaries(cds_spans, mrna_spans) -> int:
 
 def synthesize_features(rec, seqid) -> list:
     """Group flatfile mRNA/CDS/RNA by locus_tag into canonical gene->mRNA->exon/CDS."""
-    bio = [f for f in rec.features if f.type in _RNA_TYPES or f.type == "CDS"]
+    bio = [f for f in rec.features
+           if f.type in _RNA_TYPES or f.type == "CDS" or f.type == "intron"]
     groups = OrderedDict()
     for i, f in enumerate(bio):
         lt = _locus_tag(f)
@@ -99,6 +100,8 @@ def synthesize_features(rec, seqid) -> list:
         mrnas = [f for f in members if f.type == "mRNA"]
         cdss = [f for f in members if f.type == "CDS"]
         rnas = [f for f in members if f.type in _RNA_TYPES and f.type != "mRNA"]
+        introns = [f for f in members if f.type == "intron"]
+        group_trans = any(_is_trans(m) for m in members)
 
         # pair each CDS to a containing mRNA; synthesize an mRNA if none
         transcripts = []  # list of (mrna_feature_or_None_synth, [cds])
@@ -124,7 +127,8 @@ def synthesize_features(rec, seqid) -> list:
             all_spans += bio_location_to_spans(m.location, seqid, is_cds=(m.type == "CDS"))
         g_lo, g_hi = min(s.start for s in all_spans), max(s.end for s in all_spans)
         g_strand = all_spans[0].strand
-        biotype = _BIOTYPE.get(members[0].type, "other")
+        biotype_src = next((m.type for m in members if m.type != "intron"), members[0].type)
+        biotype = _BIOTYPE.get(biotype_src, "other")
         gene_attrs = {"ID": [gene_id]}
         if _locus_tag(members[0]):
             gene_attrs["locus_tag"] = [_locus_tag(members[0])]
@@ -134,8 +138,16 @@ def synthesize_features(rec, seqid) -> list:
         if members[0].qualifiers.get("gene_synonym"):
             gene_attrs["gene_synonym"] = list(members[0].qualifiers["gene_synonym"])
         gene_attrs["gene_biotype"] = [biotype]
-        out.append(Feature(gene_id, "DDBJ", "gene", [Span(seqid, g_lo, g_hi, g_strand)],
-                           gene_attrs, []))
+        if group_trans:
+            trans_src = next(m for m in members if _is_trans(m))
+            gene_spans = bio_location_to_spans(trans_src.location, seqid,
+                                               is_cds=(trans_src.type == "CDS"))
+            gene_attrs["is_ordered"] = ["true"]
+            for gi, s in enumerate(gene_spans, 1):
+                s.part = gi
+        else:
+            gene_spans = [Span(seqid, g_lo, g_hi, g_strand)]
+        out.append(Feature(gene_id, "DDBJ", "gene", gene_spans, gene_attrs, []))
 
         for i, (mfeat, member_cds) in enumerate(transcripts, 1):
             is_rna = mfeat is not None and mfeat.type in _RNA_TYPES and mfeat.type != "mRNA"
@@ -149,6 +161,8 @@ def synthesize_features(rec, seqid) -> list:
                 tx_spans = [Span(seqid, s.start, s.end, s.strand) for s in cspans]
                 tx_attrs = {k: v for k, v in qualifiers_to_attrs(member_cds[0]).items()
                             if k in ("locus_tag", "gene", "product", "Note")}
+                if _is_trans(member_cds[0]):
+                    _mark_trans_spliced(tx_attrs, tx_spans)
             tx_attrs["ID"] = [tx_id]
             tx_attrs["Parent"] = [gene_id]
             out.append(Feature(tx_id, "DDBJ", tx_type, tx_spans, tx_attrs, [gene_id]))
@@ -163,6 +177,8 @@ def synthesize_features(rec, seqid) -> list:
                 cspans = bio_location_to_spans(c.location, seqid, is_cds=True,
                     codon_start=int(c.qualifiers.get("codon_start", ["1"])[0]))
                 c_attrs = qualifiers_to_attrs(c)
+                if _is_trans(c):
+                    _mark_trans_spliced(c_attrs, cspans)
                 base = f"cds-{c.qualifiers.get('protein_id', [tx_id])[0]}"
                 c_id = base
                 _n = 1
@@ -173,6 +189,16 @@ def synthesize_features(rec, seqid) -> list:
                 c_attrs["ID"] = [c_id]
                 c_attrs["Parent"] = [tx_id]
                 out.append(Feature(c_id, "DDBJ", "CDS", cspans, c_attrs, [tx_id]))
+
+        for k, intr in enumerate(introns, 1):
+            ispans = bio_location_to_spans(intr.location, seqid, is_cds=False)
+            iattrs = qualifiers_to_attrs(intr)
+            if _is_trans(intr):
+                _mark_trans_spliced(iattrs, ispans)
+            iid = f"intron-{lt}-{k}"
+            iattrs["ID"] = [iid]
+            iattrs["Parent"] = [gene_id]
+            out.append(Feature(iid, "DDBJ", "intron", ispans, iattrs, [gene_id]))
     return out
 
 
