@@ -140,8 +140,7 @@ def synthesize_features(rec, seqid) -> list:
         gene_attrs["gene_biotype"] = [biotype]
         if group_trans:
             trans_src = next(m for m in members if _is_trans(m))
-            gene_spans = bio_location_to_spans(trans_src.location, seqid,
-                                               is_cds=(trans_src.type == "CDS"))
+            gene_spans = bio_location_to_spans(trans_src.location, seqid, is_cds=False)
             gene_attrs["is_ordered"] = ["true"]
             for gi, s in enumerate(gene_spans, 1):
                 s.part = gi

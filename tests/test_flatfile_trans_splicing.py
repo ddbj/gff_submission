@@ -59,3 +59,10 @@ def test_synthesis_marks_trans_and_emits_introns():
     assert trans_i.attributes.get("number") == ["1"]
     assert cis_i.attributes.get("number") == ["2"] and "exception" not in cis_i.attributes
     assert all(i.parent_ids and i.parent_ids[0].startswith("gene-") for i in introns)
+
+
+def test_trans_gene_spans_have_no_phase():
+    rec = SeqIO.read(FIX, "genbank")
+    feats = synthesize_features(rec, "AP025455")
+    gene = next(f for f in feats if f.type == "gene")
+    assert all(s.phase is None for s in gene.spans)   # gene rows must not carry CDS phase
