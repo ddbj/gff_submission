@@ -66,3 +66,23 @@ def test_trans_gene_spans_have_no_phase():
     feats = synthesize_features(rec, "AP025455")
     gene = next(f for f in feats if f.type == "gene")
     assert all(s.phase is None for s in gene.spans)   # gene rows must not carry CDS phase
+
+
+from ddbj_gff.flatfile.convert import flatfile_to_gff
+from ddbj_gff.writer import write
+from ddbj_gff.validate import validate
+
+
+def test_flatfile_to_gff_builds_location_and_validates():
+    rec = SeqIO.read(FIX, "genbank")
+    doc = flatfile_to_gff(rec)
+    cds = next(f for f in doc.features if f.type == "CDS")
+    intron_trans = next(f for f in doc.features if f.type == "intron" and len(f.spans) == 2)
+    # normalize built the canonical location= from the part-ordered per-part-strand spans
+    assert cds.attributes["location"] == ["join(complement(1641..1754),93..324,829..854)"]
+    assert intron_trans.attributes["location"] == ["join(complement(855..1640),1..92)"]
+    # no ERROR-level validate diagnostics (region -> feature-type-not-insdc WARNING is allowed)
+    errors = [d for d in validate(doc) if getattr(d, "severity", None) and d.severity.name == "ERROR"]
+    assert errors == [], f"unexpected validate errors: {[d.code for d in errors]}"
+    # trans-splicing no longer flagged noncanonical (location= present)
+    assert "noncanonical-special-case" not in {d.code for d in validate(doc)}
