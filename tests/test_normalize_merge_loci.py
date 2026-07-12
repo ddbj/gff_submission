@@ -95,3 +95,30 @@ def test_trans_spliced_exempt():
     doc = _norm(gff, merge_overlapping_loci=True)
     ids = {g.id for g in _genes(doc)}
     assert ids == {"gT", "gN"}                                  # trans-spliced gT exempt; gN untouched
+
+
+def test_orphan_parent_in_component_no_crash():
+    # an mRNA whose Parent gene is MISSING, sorting first, plus two real overlapping genes
+    orphan = ("c\tx\tmRNA\t90\t480\t.\t+\t.\tID=oX.m;Parent=gMISSING\n"
+              "c\tx\tCDS\t90\t480\t.\t+\t0\tID=oX.c;Parent=oX.m\n")
+    gff = _gff([orphan, _gene("gA", 100, 500), _gene("gB", 300, 700)])
+    doc = _norm(gff, merge_overlapping_loci=True)                 # must NOT crash
+    genes = _genes(doc)
+    assert len(genes) == 1                                        # merged into one real gene
+    rep = genes[0].id
+    assert all(m.parent_ids == [rep] for m in _mrnas(doc))        # orphan reparented too (dangling resolved)
+    assert "dangling-parent" not in {d.code for d in validate_ok(doc)}
+
+
+def test_multi_isoform_partial_merge_recomputes_span():
+    # gene B has two mRNAs: m1 overlaps gene A (merges away), m2 is far and non-overlapping (stays)
+    gB = ("c\tx\tgene\t300\t2500\t.\t+\t.\tID=gB\n"
+          "c\tx\tmRNA\t300\t500\t.\t+\t.\tID=gB.m1;Parent=gB\n"
+          "c\tx\tCDS\t300\t500\t.\t+\t0\tID=gB.c1;Parent=gB.m1\n"
+          "c\tx\tmRNA\t2000\t2500\t.\t+\t.\tID=gB.m2;Parent=gB\n"
+          "c\tx\tCDS\t2000\t2500\t.\t+\t0\tID=gB.c2;Parent=gB.m2\n")
+    gff = _gff([_gene("gA", 100, 450), gB])                       # gA 100..450 overlaps gB.m1 300..500
+    doc = _norm(gff, merge_overlapping_loci=True)
+    gbg = next((g for g in _genes(doc) if g.id == "gB"), None)
+    assert gbg is not None                                       # gB survives (keeps m2)
+    assert gbg.spans[0].start == 2000 and gbg.spans[0].end == 2500   # span recomputed to remaining child

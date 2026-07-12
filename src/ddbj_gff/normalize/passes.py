@@ -376,28 +376,42 @@ def pass_merge_overlapping_loci(doc, ctx) -> list:
                 continue
             members.sort(key=lambda m: (min(s.start for s in m.spans),
                                         max(s.end for s in m.spans), m.id or ""))
-            rep = _gene_of(members[0])
+            rep = next((_gene_of(m) for m in members if _gene_of(m) is not None), None)
+            if rep is None:
+                continue
             u_lo = min(min(s.start for s in m.spans) for m in members)
             u_hi = max(max(s.end for s in m.spans) for m in members)
             for m in members:
                 g = _gene_of(m)
-                if g is None or g is rep:
+                if g is rep:
                     continue
-                g.children = [c for c in g.children if c is not m]
+                if g is not None:
+                    g.children = [c for c in g.children if c is not m]
+                    touched.add(g.id)
                 m.parent_ids = [rep.id]
                 m.attributes["Parent"] = [rep.id]
                 m.parents = [rep]
                 rep.children.append(m)
-                touched.add(g.id)
             rep.spans = [Span(seqid, u_lo, u_hi, strand)]
             changes.append(Change("merge-loci", rep.id or "?",
                                   f"merged {len(genes)} loci into {rep.id!r} "
                                   f"({len(members)} mRNAs, {seqid}:{u_lo}..{u_hi})"))
-    dead = {gid for gid in touched
-            if doc.feature_index.get(gid) is not None and not doc.feature_index[gid].children}
+    dead: set = set()
+    for gid in touched:
+        g = doc.feature_index.get(gid)
+        if g is None:
+            continue
+        if not g.children:
+            dead.add(gid)
+        else:                                  # survived with remaining children -> recompute span
+            cs = [s for c in g.children for s in c.spans]
+            if cs:
+                strand0 = g.spans[0].strand if g.spans else cs[0].strand
+                g.spans = [Span(cs[0].seqid, min(s.start for s in cs),
+                                max(s.end for s in cs), strand0)]
     if dead:
-        doc.features = [f for f in doc.features
-                        if not (f.type == "gene" and f.id in dead)]
+        doc.features = [f for f in doc.features if not (f.type == "gene" and f.id in dead)]
+        doc.roots = [f for f in doc.roots if not (f.type == "gene" and f.id in dead)]
         for gid in dead:
             doc.feature_index.pop(gid, None)
     return changes
