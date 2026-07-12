@@ -311,6 +311,98 @@ def pass_circular_origin(doc, ctx) -> list:
     return changes
 
 
+def _find(parent, x):
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]
+        x = parent[x]
+    return x
+
+
+def pass_merge_overlapping_loci(doc, ctx) -> list:
+    """Merge same-strand gene loci whose mRNAs overlap into one gene (opt-in).
+
+    Edge between two mRNAs when overlap_bp/min(len) >= config.merge_overlap_min_fraction
+    (default 0.0 = any overlap). Connected components form a locus; the gene of the
+    lowest-coordinate mRNA is the representative, the others' mRNAs are reparented to it,
+    and its span becomes the union. Trans-spliced transcripts (mRNA or a CDS child with
+    exception=trans-splicing) are excluded entirely."""
+    changes: list = []
+    if not getattr(ctx.config, "merge_overlapping_loci", False):
+        return changes
+    frac = getattr(ctx.config, "merge_overlap_min_fraction", 0.0)
+
+    def _is_trans(m):
+        return m.is_trans_spliced or any(
+            c.type == "CDS" and c.is_trans_spliced for c in m.children)
+
+    def _gene_of(m):
+        pid = m.parent_ids[0] if m.parent_ids else None
+        return doc.feature_index.get(pid) if pid else None
+
+    groups: dict = {}
+    for f in doc.features:
+        if f.type != "mRNA" or not f.spans or _is_trans(f):
+            continue
+        lo = min(s.start for s in f.spans)
+        hi = max(s.end for s in f.spans)
+        groups.setdefault((f.spans[0].seqid, f.spans[0].strand), []).append((lo, hi, f))
+
+    touched: set = set()
+    for (seqid, strand), items in groups.items():
+        items.sort(key=lambda t: (t[0], t[1], t[2].id or ""))
+        n = len(items)
+        parent = list(range(n))
+        for i in range(n):
+            lo_i, hi_i, _ = items[i]
+            for j in range(i + 1, n):
+                lo_j, hi_j, _ = items[j]
+                if lo_j > hi_i:
+                    break
+                ov = min(hi_i, hi_j) - max(lo_i, lo_j) + 1
+                if ov > 0 and ov / min(hi_i - lo_i + 1, hi_j - lo_j + 1) >= frac:
+                    ri, rj = _find(parent, i), _find(parent, j)
+                    if ri != rj:
+                        parent[rj] = ri
+        comps: dict = {}
+        for i in range(n):
+            comps.setdefault(_find(parent, i), []).append(items[i][2])
+        for members in comps.values():
+            genes = {}
+            for m in members:
+                g = _gene_of(m)
+                if g is not None:
+                    genes[g.id] = g
+            if len(genes) < 2:
+                continue
+            members.sort(key=lambda m: (min(s.start for s in m.spans),
+                                        max(s.end for s in m.spans), m.id or ""))
+            rep = _gene_of(members[0])
+            u_lo = min(min(s.start for s in m.spans) for m in members)
+            u_hi = max(max(s.end for s in m.spans) for m in members)
+            for m in members:
+                g = _gene_of(m)
+                if g is None or g is rep:
+                    continue
+                g.children = [c for c in g.children if c is not m]
+                m.parent_ids = [rep.id]
+                m.attributes["Parent"] = [rep.id]
+                m.parents = [rep]
+                rep.children.append(m)
+                touched.add(g.id)
+            rep.spans = [Span(seqid, u_lo, u_hi, strand)]
+            changes.append(Change("merge-loci", rep.id or "?",
+                                  f"merged {len(genes)} loci into {rep.id!r} "
+                                  f"({len(members)} mRNAs, {seqid}:{u_lo}..{u_hi})"))
+    dead = {gid for gid in touched
+            if doc.feature_index.get(gid) is not None and not doc.feature_index[gid].children}
+    if dead:
+        doc.features = [f for f in doc.features
+                        if not (f.type == "gene" and f.id in dead)]
+        for gid in dead:
+            doc.feature_index.pop(gid, None)
+    return changes
+
+
 def pass_trans_splicing_location(doc, ctx) -> list:
     """Build the canonical INSDC location=join(...) attribute for trans-spliced
     multi-part features. Per-part strand: '-' -> complement, '+'/'?'/'.' -> forward;
