@@ -198,6 +198,66 @@ def pass_coerce_transcript_to_mrna(doc, ctx) -> list:
     return changes
 
 
+_REPARENT_STRUCTURAL = {"CDS", "exon", "intron", "three_prime_UTR",
+                        "five_prime_UTR", "start_codon", "stop_codon"}
+
+
+def pass_reparent_gene_children_to_mrna(doc, ctx) -> list:
+    """Reparent a gene's direct structural sub-features onto the gene's mRNA.
+
+    Fixes AUGUSTUS-dialect GFFs where CDS/exon/etc. are parented to the gene
+    instead of the mRNA (so the mRNA is empty and gff2mss would drop the gene).
+    Complement of pass_wrap_cds_in_mrna, which handles genes with structural
+    children and NO transcript. Acts only when the reparent target is
+    unambiguous: exactly one transcript child that is an mRNA.
+    """
+    changes: list = []
+    if not getattr(ctx.config, "reparent_gene_children", True):
+        return changes
+    for gene in doc.features:
+        if gene.type != "gene":
+            continue
+        structural = [c for c in gene.children if c.type in _REPARENT_STRUCTURAL]
+        if not structural:
+            continue
+        transcripts = [c for c in gene.children if c.type not in _REPARENT_STRUCTURAL]
+        if not transcripts:
+            continue  # no transcript at all -> pass_wrap_cds_in_mrna's job
+        if len(transcripts) != 1 or transcripts[0].type != "mRNA":
+            reason = ("multiple transcript children" if len(transcripts) > 1
+                      else f"sole transcript is {transcripts[0].type!r}, not mRNA")
+            changes.append(Change("needs-manual", gene.id or "?",
+                                  f"gene {gene.id!r} has {len(structural)} gene-level "
+                                  f"sub-feature(s) but {reason}; left for manual review"))
+            continue
+        mrna = transcripts[0]
+        if mrna.is_trans_spliced or len(mrna.spans) > 1:
+            # A trans-spliced / multi-part-span mRNA carries a carefully built
+            # span structure (e.g. flatfile2gff trans-splicing introns are
+            # intentionally gene-level siblings of such an mRNA); reparenting
+            # plus this pass's single-Span recompute would destroy it. That is
+            # not the empty-mRNA AUGUSTUS-dialect bug this pass targets, so
+            # leave the gene-level siblings alone.
+            continue
+        struct_ids = {id(c) for c in structural}
+        for c in structural:
+            c.parent_ids = [mrna.id]
+            c.parents = [mrna]
+            if "Parent" in c.attributes:
+                c.attributes["Parent"] = [mrna.id]
+            mrna.children.append(c)
+        gene.children = [c for c in gene.children if id(c) not in struct_ids]
+        seqid = mrna.spans[0].seqid if mrna.spans else structural[0].spans[0].seqid
+        strand = mrna.spans[0].strand if mrna.spans else structural[0].spans[0].strand
+        lo = min([s.start for s in mrna.spans] + [s.start for c in structural for s in c.spans])
+        hi = max([s.end for s in mrna.spans] + [s.end for c in structural for s in c.spans])
+        mrna.spans = [Span(seqid, lo, hi, strand)]
+        changes.append(Change("reparent-to-mrna", mrna.id or "?",
+                              f"reparented {len(structural)} gene-level sub-feature(s) of "
+                              f"gene {gene.id!r} to mRNA {mrna.id!r}"))
+    return changes
+
+
 def pass_wrap_cds_in_mrna(doc, ctx) -> list:
     """Insert an mRNA level for genes whose CDS/exon hang directly off the gene.
 
