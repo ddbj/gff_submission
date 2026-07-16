@@ -134,3 +134,21 @@ def test_flag_off_no_reparent():
     doc, report = _norm(gff, reparent_gene_children=False)
     assert _feat(doc, "g1.cds1").parent_ids == ["g1"]
     assert not any(ch.action == "reparent-to-mrna" for ch in report.applied)
+
+
+def test_trans_spliced_mrna_gene_level_intron_not_reparented():
+    # An mRNA flagged trans-spliced (exception=trans-splicing) with a gene-level
+    # intron sibling: the guard must skip the gene entirely, leaving the intron
+    # parented to the gene and the mRNA's own children untouched. This protects
+    # the trans-splicing structure flatfile2gff builds (introns intentionally
+    # gene-level) from the pass's single-Span recompute.
+    gff = HDR + (
+        "c\tx\tgene\t100\t900\t.\t+\t.\tID=g1\n"
+        "c\tx\tmRNA\t100\t900\t.\t+\t.\tID=g1.1;Parent=g1;exception=trans-splicing\n"
+        "c\tx\tCDS\t100\t200\t.\t+\t0\tID=g1.c1;Parent=g1.1\n"
+        "c\tx\tintron\t201\t799\t.\t+\t.\tID=g1.in1;Parent=g1\n"
+    )
+    doc, report = _norm(gff)
+    assert _feat(doc, "g1.in1").parent_ids == ["g1"]              # intron NOT reparented
+    assert not any(ch.action == "reparent-to-mrna" for ch in report.applied)
+    assert {c.id for c in _feat(doc, "g1.1").children} == {"g1.c1"}  # mRNA keeps only its own CDS
