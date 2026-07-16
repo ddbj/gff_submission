@@ -231,12 +231,13 @@ def pass_reparent_gene_children_to_mrna(doc, ctx) -> list:
                                   f"sub-feature(s) but {reason}; left for manual review"))
             continue
         mrna = transcripts[0]
-        if mrna.children:
-            # mRNA already has its own children (e.g. flatfile2gff-synthesized
-            # CDS/exon) -> not the "empty mRNA" AUGUSTUS-dialect bug this pass
-            # targets. Leftover gene-level siblings (e.g. trans-splicing introns
-            # intentionally parented to the gene) are a different, legitimate
-            # structure -> leave them alone.
+        if mrna.is_trans_spliced or len(mrna.spans) > 1:
+            # A trans-spliced / multi-part-span mRNA carries a carefully built
+            # span structure (e.g. flatfile2gff trans-splicing introns are
+            # intentionally gene-level siblings of such an mRNA); reparenting
+            # plus this pass's single-Span recompute would destroy it. That is
+            # not the empty-mRNA AUGUSTUS-dialect bug this pass targets, so
+            # leave the gene-level siblings alone.
             continue
         struct_ids = {id(c) for c in structural}
         for c in structural:
