@@ -5,16 +5,19 @@ import copy
 from ..validate.vocab import load_vocab
 from .config import NormalizeConfig
 from .passes import (NormalizeContext, pass_directives, pass_coerce_transcript_to_mrna,
+                     pass_reparent_gene_children_to_mrna,
                      pass_wrap_cds_in_mrna, pass_merge_overlapping_loci, pass_circular_origin,
                      pass_trans_splicing_location, pass_so_terms, pass_transl_except, pass_anticodon)
 from .report import NormalizationReport
 
-ALL_PASSES = [pass_directives, pass_coerce_transcript_to_mrna, pass_wrap_cds_in_mrna,
+ALL_PASSES = [pass_directives, pass_coerce_transcript_to_mrna,
+              pass_reparent_gene_children_to_mrna, pass_wrap_cds_in_mrna,
               pass_merge_overlapping_loci, pass_circular_origin, pass_trans_splicing_location,
               pass_so_terms, pass_transl_except, pass_anticodon]
 
 # actions that represent a clean applied change; everything else needs human attention
-_APPLIED = {"add-directive", "rename-type", "add-qualifier", "add-child-feature", "merge-loci"}
+_APPLIED = {"add-directive", "rename-type", "add-qualifier", "add-child-feature",
+            "merge-loci", "reparent-to-mrna"}
 
 
 def normalize(doc, *, seq_lengths=None, config=None) -> tuple:
