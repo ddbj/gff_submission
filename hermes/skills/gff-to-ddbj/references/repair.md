@@ -14,7 +14,6 @@ Operations:
 - `missing-start-stop-to-partial-cds` — CDS lacking a start/stop codon → mark the end partial.
   Sequence-based (needs `--fasta`).
 
-Partiality is written as INSDC `partial=true` + `start_range`/`end_range`. Sequence-based ops
-silently find nothing without `--fasta`. Default `--apply all` order runs
+Partiality is written as INSDC `partial=true` + `start_range`/`end_range`. The sequence-based ops (`internal-stop-to-misc`, `missing-start-stop-to-partial-cds`) require `--fasta`; the CLI exits with an error (exit 2) if you select one without it. `utr-absent-to-partial-mrna` is structural and needs no FASTA. Default `--apply all` order runs
 `internal-stop-to-misc` first (so retyped features are excluded from the partial-CDS op).
 `--detect --json` prints machine-readable candidates for an agent to select from.

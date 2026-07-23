@@ -72,7 +72,7 @@ Steps 1–4 for the happy path:
 
 ## Pitfalls
 
-- **Repair sequence ops silently no-op without `--fasta`** — always pass `--fasta` to `repair` when you want internal-stop / start-stop detection. Apply order matters: run `internal-stop-to-misc` before the partial ops (the default `--apply all` order does this).
+- **Repair sequence ops require `--fasta`** — the sequence-based ops (`internal-stop-to-misc`, `missing-start-stop-to-partial-cds`) error (exit 2) without `--fasta`. Apply order matters: run `internal-stop-to-misc` before the partial ops (the default `--apply all` order does this).
 - **`gff2mss` requires `--mss-config` and `--common`** — it errors without them. The `.ann` entry (seqid) names must match the FASTA.
 - **`ddbj-validator` without `-f` crashes with `EOFError`** at the interactive auto-fix prompt in a non-TTY shell. `-f` applies fixes non-interactively to `OUT/fixed/` (non-destructive).
 - **Large genome + foreground timeout → truncated `fixed/`** — background the validator; use `-j 1` on a single-core node.
