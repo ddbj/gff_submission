@@ -1,0 +1,65 @@
+LOCUS       LC757512                2400 bp    RNA     linear   VRL 01-JAN-1980
+DEFINITION  Jasmine virus H p87 transl_except(Pyl) fixture (excerpt 1..2400).
+ACCESSION   LC757512
+VERSION     LC757512
+KEYWORDS    .
+SOURCE      .
+  ORGANISM  Jasmine virus H
+            Viruses; Riboviria; Orthornavirae.
+FEATURES             Location/Qualifiers
+     source          1..2400
+                     /organism="Jasmine virus H"
+                     /mol_type="genomic RNA"
+                     /db_xref="taxon:1960887"
+                     /isolate="JaVH_CNU"
+                     /geo_loc_name="South Korea"
+     CDS             20..2320
+                     /gene="p87"
+                     /product="RNA-dependent RNA polymerase"
+                     /protein_id="BDX99477.1"
+                     /transl_table=1
+                     /codon_start=1
+                     /note="p87 is a readthrough protein of p27"
+                     /transl_except=(pos:746..748,aa:Pyl)
+ORIGIN
+        1 atatcctagc ggtatcacaa tgggtctgct aagttgcggt atctctgtgg gtttcaaagt
+       61 attgcgtacc acattagcgg tgcaaaccgg gttggcgctc ggtgtcactg gtggtataat
+      121 agaacatgtt actggcaaga aaatctctta cgaccctgct acaaacatag tgtgtaggat
+      181 tgctggcatt agtcctactt ttcattcttt gtgcactcta cctgatgttg atccggagcc
+      241 aatgcttcgt agtgccgact acctctacga tcatcctact atggaatatg atcattgcgt
+      301 ggaggtagat gtcgagagct ccggggagac aaaggtagtc aagcgaaacg gagtgcacaa
+      361 gaaaccatct tttgccgcga ttctgtgtgc tgacgccaag aaccattttg gtgggactcc
+      421 ttcaccctcc aaggctaacg ctctctctgt catgaaatac cttgtcaaca agtgtaacga
+      481 acacaagttg actgtactac aaactagaga gtgttccgca ttggcgcttc ccttggtttt
+      541 ttctcccgac gctatggata agtacactta tcggcacctc aactcttcgg aggcattcga
+      601 gcgtcgggtt gacttctcca agtctaccag agtggatcca gtatggctcg ggttcttcac
+      661 cgctccacta caatccaaaa cctggaaacg agcgttcctg caacttaccc gcctcgggtc
+      721 gcaggaggcc ttccagttca ttaaataggg atgcttgatg agaactgatg gtgtggacac
+      781 gaaagtgttc aggggtcaac accattgggt aactgaatct cgtcaagcgg cgagtgtcga
+      841 tccccgtaga ttgtataaga ttagcggcct ctccgactcc gttagttggg gagtgcataa
+      901 taattctttc gtaaacctcc ggcgaggact tatggaaagg gtcttctttg tcgaaagaca
+      961 aggagagcta atcccttgtc ctagcccttc tgaacactcg tttaggcgtc ttcggaataa
+     1021 agtcggctac aaattaagtg ggttgtgtgg aagtcattcc cccatcccca ggaaagattt
+     1081 tcctgggatg tttgagggca ggaagcgcac gatctaccaa aatgcagctg attccctatc
+     1141 tgaacgcccc gtctgtgtac gtgatagttt tcttaaaaca tttgttaagt gtgagaagtt
+     1201 aaattttact aagaaacctg atcctgctcc tagggtaatc caaccgcgcg atccgaggta
+     1261 caatgttgaa ctcggacgat atctcaaacc ctttgagcat caagcatata gagcattaga
+     1321 taaactgtgg ggtggaccaa ccgttatgaa aggatacacc gtcaaggaaa ttggtaacat
+     1381 cctacgagat cactggaatc ggtaccagaa gcctgctgcg attggattcg acatgagcag
+     1441 atttgaccag catgtttctg tggatgccct taagtttgag cactggctgt atcggagggc
+     1501 gtttaacaat gatggccact tggccaatct actgggcatg cagctagaga acagagggac
+     1561 tgcgtttgct aaggacggta cgctgaagta caaagtgaac gggaagagga tgagtggtga
+     1621 catgaatact gcgcttggaa actgcatctt agcctgttct atcaccaaag agttgatgat
+     1681 gcgcattggc attgagtgct ccttaatcaa taatggggat gactgtgtac tcttcactga
+     1741 atccagaaat gtccgcgctg tcgaggatat cttgacagag gggtggctcg agtatggatt
+     1801 tacttgtgta gcggaaaagc ccgtcttcga aatcgaaaaa gtggaatttt gccaaatgca
+     1861 acctgttaaa gttggggatg attacgtcat ggtgcggaat cctcggattt cgttgagtaa
+     1921 agattcccat tcaaccgttc ctttcgataa gaccaagctg gcgcaggaat ggacctacgg
+     1981 cgtgggccta ggcggcattg ctttaaccca aggcatccca gtagtccagg aattttacca
+     2041 atgcctgatc aataatggta ggaaattcaa aactgagaag cgcatgagag tcctttttgg
+     2101 tgattacaag tatcattgga ggctgtcaaa tggtgggaag tatagccctg tttcacagga
+     2161 gtccaggcat tctttccata tcgcatttgg tatcagccca gaccaacaga taaccatgga
+     2221 ggattactac aagaatttta ggatttcctg ggagttcgcc ccattcgata aagaattcaa
+     2281 cgatatcgaa tggacactgc aacaaccgat aagcctatag cgaagcctga cgagaagcaa
+     2341 gcaaaacgtg gtaaaactaa gaaccgactc gacgtagcac attctggcgt ggctaaatcc
+//
