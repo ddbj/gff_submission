@@ -15,17 +15,17 @@ console-script（`pip` でインストールされる実行コマンド。`[proj
 | uv | **推奨**。無い場合は pip でも可 |
 | git | 必須 |
 
-## 新マシンへの取得（重要: git remote が無い）
+## 新マシンへの取得
 
-このリポジトリには**現在 git のリモートが設定されていません**。新マシンへ移すには、いずれか:
+このリポジトリは GitHub にあります（**`git@github.com:ddbj/gff_submission.git`**。旧名 `ddbj/gff` は自動リダイレクト）:
 
-1. **ディレクトリごとコピー**（`.git` を含めて丸ごと転送。履歴も保持される） — 最も簡単
-2. **リモートを設定して push**（GitHub 等に空リポジトリを作成 → `git remote add origin <URL>` → `git push -u origin main`）してから新マシンで clone
+```bash
+git clone git@github.com:ddbj/gff_submission.git
+```
 
-> **注記（`uv.lock`）**: `uv.lock` は `.gitignore` 対象で**追跡されていません**。方法1（ディレクトリ丸ごとコピー）では
-> ローカルの `uv.lock` も一緒に運ばれますが、方法2（push → clone）では含まれず、新マシンの `uv sync` は依存を
-> **その場で再解決**します（固定 lock には従いません）。依存は `biopython>=1.83` の1つのみのため実害は小さいです。
-> 再現性を厳密に固定したい場合は `.gitignore` から `uv.lock` を外して追跡してください。
+> **注記（`uv.lock`）**: `uv.lock` は `.gitignore` 対象で**追跡されていません**。clone には含まれないため、
+> 新マシンの `uv sync` は依存を**その場で再解決**します（固定 lock には従いません）。依存は `biopython>=1.83`
+> の1つのみのため実害は小さいです。再現性を厳密に固定したい場合は `.gitignore` から `uv.lock` を外して追跡してください。
 
 `ddbj_mss_tools` の `gff2mss` を開発する場合、両リポジトリを**同じ親ディレクトリに隣接**して置きます
 （`ddbj_mss_tools` 側が `../gff_submission` を editable 参照するため）:
@@ -68,7 +68,8 @@ pytest -m ""       # slow を含む全テストを実行したい場合
 - `ddbj-gff` は `ddbj_mss_tools` の `gff2mss` サブツール**専用の optional 依存**です。他ツールは依存しません。
 - 開発時の反映（uv editable path / コンテナ用 wheel 生成）とバージョン運用は `docs/mss-tools-integration.md` を参照。
 - **バージョンは現状 `0.1.0` 固定**。dev は editable、コンテナは毎回 wheel をビルドするため、更新のたびに
-  version を上げる必要はありません（将来 PyPI/GitHub 公開・版固定へ移行する際に version 運用を切り替え）。
+  version を上げる必要はありません（GitHub には公開済み。将来 タグ固定 `git+https://…@<tag>` や PyPI 公開など
+  **版固定の消費方式**へ移行する際に version 運用を切り替え）。
 
 ## Docker（任意）
 

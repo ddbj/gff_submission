@@ -6,7 +6,8 @@
 optional extra**（`pip install "ddbj-mss-tools[gff2mss]"`）として扱われています。
 
 `ddbj-gff` は開発中で頻繁に更新される想定のため、更新を各所へ反映する運用を以下にまとめます。
-（現状 version は `0.1.0` 固定のまま運用。git remote・PyPI 公開はまだ無し。）
+（現状 version は `0.1.0` 固定のまま運用。GitHub remote は `git@github.com:ddbj/gff_submission.git`。
+PyPI 公開・タグ固定はまだ無し — dev は editable path、コンテナは wheel 直接指定で消費する。）
 
 ## 1. ローカル開発（推奨・最速）
 
