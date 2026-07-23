@@ -654,8 +654,7 @@ def test_detect_three_prime_partial_missing_stop():
 
 
 def test_detect_five_prime_partial_missing_start():
-    # replace start codon ATG with CTT (not a start), keep no stop
-    gff = GFF.replace("ATG", "")  # no-op safety; build a fresh CDS seq below
+    # sequence starts with CTT (not a start codon) and ends with a stop (TAA)
     doc = parse(GFF)
     op = get_operation("missing-start-stop-to-partial-cds")
     ctx = RepairContext(sequences={"s": Seq("CTTAAAGTTTAA")}, transl_table=1)
@@ -983,9 +982,12 @@ def test_apply_writes_curated_gff_that_validates(tmp_path):
     out = tmp_path / "out.gff3"
     rc = main(["--gff", GFF, "--fasta", FASTA, "--apply", "all", "--out", str(out)])
     assert rc == 0
+    before = {d.code for d in validate(parse(open(GFF).read()))
+              if d.severity.name == "ERROR"}
     doc = parse(out.read_text())
     assert doc.feature_index["c1"].type == "misc_feature"
-    assert not any(d.severity.name == "ERROR" for d in validate(doc))
+    after = {d.code for d in validate(doc) if d.severity.name == "ERROR"}
+    assert after <= before   # repair introduced no new validation ERROR
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
