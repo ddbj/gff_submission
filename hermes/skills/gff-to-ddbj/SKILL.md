@@ -55,7 +55,7 @@ detect-only preview and the validator step, which stay manual).
    Review `normalize.txt` for `needs-manual` / `unmapped-type` lines.
 2. **Validate** — detect-only INSDC profile check:
    `$PY -m ddbj_gff.validate --gff norm.gff`
-   Inspect `ERR:` lines; fix inputs and re-run until no ERROR (warnings may remain).
+   Inspect `ERROR` lines (tab-separated; the tool exits non-zero if any ERROR); fix inputs and re-run until no ERROR (warnings may remain).
 3. **Repair** — preview, then apply curation (sequence-based ops need `--fasta`):
    - Preview: `$PY -m ddbj_gff.repair --gff norm.gff --fasta GENOME.fa --detect --json`
    - Apply chosen ops (or all): `$PY -m ddbj_gff.repair --gff norm.gff --fasta GENOME.fa --apply all --out repaired.gff --report repair.txt`

@@ -35,7 +35,7 @@ echo "[1/4] normalize"
 "$PY" -m ddbj_gff.normalize --gff "$GFF" --fasta "$FASTA" \
       --out "$WORK/norm.gff" --report "$WORK/normalize.txt"
 
-echo "[2/4] validate (detect-only; review any ERR: lines)"
+echo "[2/4] validate (detect-only; review any ERROR lines)"
 "$PY" -m ddbj_gff.validate --gff "$WORK/norm.gff" || \
   echo "  (validate reported issues — see output above; continuing happy path)"
 

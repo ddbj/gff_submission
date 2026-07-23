@@ -19,7 +19,7 @@ Executables resolve from config: `PY=${gff_to_ddbj.env_bin}/python`,
 `GFF2MSS=${gff_to_ddbj.env_bin}/gff2mss`, `VALIDATOR=${gff_to_ddbj.validator_dir}/ddbj-validator`.
 
 1. `$PY -m ddbj_gff.normalize --gff ann.gff3 --fasta genome.fa --out norm.gff --report normalize.txt`
-2. `$PY -m ddbj_gff.validate --gff norm.gff` (detect-only; inspect ERR: lines)
+2. `$PY -m ddbj_gff.validate --gff norm.gff` (detect-only; inspect ERROR lines)
 3. `$PY -m ddbj_gff.repair --gff norm.gff --fasta genome.fa --apply all --out repaired.gff`
    — **`--fasta` present** (sequence ops require it; CLI errors exit 2 without it)
 4. `$GFF2MSS --gff repaired.gff --fasta genome.fa --mss-config mss.toml --common common.json --out submission/NAME`
