@@ -7,7 +7,7 @@ is either a caller-provided subset of candidates or `None` to re-detect).
 from __future__ import annotations
 
 from ..normalize.report import Change
-from .cds import coding_sequence
+from .cds import coding_sequence, protein_of, has_internal_stop
 from .context import RepairContext
 from .registry import Operation, register
 from .report import Candidate
@@ -122,3 +122,43 @@ def _apply_startstop(doc, ctx: RepairContext, selection):
 register(Operation("missing-start-stop-to-partial-cds",
                    "Mark a CDS partial when its sequence lacks a start or stop codon.",
                    requires_sequence=True, detect=_detect_startstop, apply=_apply_startstop))
+
+
+# --- internal-stop-to-misc -------------------------------------------------
+
+def _detect_internal_stop(doc, ctx: RepairContext) -> list[Candidate]:
+    out: list[Candidate] = []
+    if ctx.sequences is None:
+        return out
+    for f in doc.features:
+        if f.type != "CDS" or not f.spans or f.is_trans_spliced:
+            continue
+        if f.spans[0].seqid not in ctx.sequences:
+            continue
+        if has_internal_stop(protein_of(f, ctx)):
+            out.append(Candidate(
+                "internal-stop-to-misc", f.id, f.spans[0].seqid,
+                detail=f"CDS {f.id!r} has an internal stop codon -> misc_feature",
+                payload={}))
+    return out
+
+
+def _apply_internal_stop(doc, ctx: RepairContext, selection):
+    cands = selection if selection is not None else _detect_internal_stop(doc, ctx)
+    changes: list[Change] = []
+    for c in cands:
+        f = doc.feature_index.get(c.feature_id)
+        if f is None or f.type != "CDS":
+            continue
+        f.type = "misc_feature"
+        note = (f"nonfunctional CDS: internal stop codon(s) detected in {f.id}; "
+                f"not translated")
+        f.attributes.setdefault("Note", []).append(note)
+        changes.append(Change("rename-type", f.id or "?", f"CDS -> misc_feature ({note})"))
+    return changes
+
+
+register(Operation("internal-stop-to-misc",
+                   "Retype a CDS with an internal stop codon to misc_feature (+Note).",
+                   requires_sequence=True, detect=_detect_internal_stop,
+                   apply=_apply_internal_stop))

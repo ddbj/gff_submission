@@ -81,7 +81,8 @@ def rule_start_gt_end(doc, vocab) -> list:
 
 # canonical INSDC GFF3 special-case feature types (spec v0.5): valid col3 values not present
 # in the SO-term column of feature-mapping.tsv
-_INSDC_GFF3_SPECIAL = {"recoded_codon", "anticodon", "stop_codon", "start_codon"}
+_INSDC_GFF3_SPECIAL = {"recoded_codon", "anticodon", "stop_codon", "start_codon",
+                       "misc_feature"}
 
 
 def rule_feature_type(doc, vocab) -> list:
