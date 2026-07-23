@@ -13,3 +13,5 @@ from .report import Candidate, candidates_to_json, render_candidates
 
 __all__ = ["RepairContext", "Operation", "REGISTRY", "register", "get_operation",
            "list_operations", "Candidate", "candidates_to_json", "render_candidates"]
+
+from . import operations as _operations  # noqa: E402,F401  (populates REGISTRY)
