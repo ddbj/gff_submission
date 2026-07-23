@@ -1,0 +1,25 @@
+COMMON	DBLINK		project	PRJDB16711
+			biosample	SAMD00647143
+			sequence read archive	DRR504758
+	SUBMITTER		ab_name	XXXXXX,X.
+			ab_name	YYYYYY,Y.
+			ab_name	ZZZZZZ,Z.
+			contact	XXXXXX XXXXXX
+			email	xxxxxxx@nig.ac.jp
+			phone	81-55-999-9999
+			institute	National Institute of Genetics
+			department	DNA Data Bank of Japan
+			country	Japan
+			state	Shizuoka
+			city	Mishima
+			street	Yata 1111
+			zip	411-8540
+	REFERENCE		title	High quality reference genome sequences of Marchantia polymorpha
+			ab_name	Tanizawa,Y.
+			status	Unpublished
+			year	2024
+	ST_COMMENT		tagset_id	Genome-Assembly-Data
+			Assembly Method	Hifiasm v. 0.19.5
+			Assembly Name	MpTak1_v7.1
+			Genome Coverage	160x
+			Sequencing Technology	PacBio Sequel II
