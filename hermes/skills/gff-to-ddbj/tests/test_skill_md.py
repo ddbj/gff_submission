@@ -30,8 +30,12 @@ def test_frontmatter_required_and_hermes_config():
 
 def test_description_has_no_workflow_summary():
     fm, _ = _frontmatter_and_body(SKILL.read_text())
-    # description is triggering-conditions only; must start with "Use when"
-    assert fm["description"].lstrip().startswith("Use when")
+    desc = fm["description"].lstrip()
+    assert desc.startswith("Use when")
+    # description must state triggering conditions only, not enumerate the workflow steps
+    banned = ["normalize", "gff2mss", "ddbj-validator", "repair"]
+    assert not any(tok in desc.lower() for tok in banned), \
+        "description must not enumerate pipeline steps/tools"
 
 
 def test_body_has_five_sections_in_order():

@@ -1,6 +1,6 @@
 ---
 name: gff-to-ddbj
-description: "Use when converting an INSDC/SO GFF3 + genome FASTA into a DDBJ MSS submission (.ann/.fasta) on the NIG/DDBJ cluster — covers normalize, validate, repair (internal-stop→misc_feature and partial-CDS/mRNA), gff2mss, and the final ddbj-validator check."
+description: "Use when you have an INSDC/SO GFF3 gene annotation and its genome FASTA and need to produce or validate a DDBJ MSS submission (.ann + .fasta) on the NIG/DDBJ cluster."
 version: 0.1.0
 platforms: [linux]
 metadata:
