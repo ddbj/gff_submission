@@ -1,15 +1,18 @@
 # 開発環境の構築（別マシンへの移行手順）
 
 `gff_submission`（Python パッケージ名 **`ddbj-gff`** / import 名 `ddbj_gff`）の開発環境を
-新しいマシンで再構築するための手順。本リポジトリは GFF3 正規化・パース等を提供する**ライブラリ**で、
-CLI は持ちません（`ddbj_mss_tools` の `gff2mss` サブツールから利用されます）。
+新しいマシンで再構築するための手順。本リポジトリは GFF3 正規化・パース等を提供する**ライブラリ**です。
+console-script（`pip` でインストールされる実行コマンド。`[project.scripts]`）は持ちませんが、
+`python -m ddbj_gff.normalize` / `python -m ddbj_gff.validate` のモジュール CLI があります
+（`src/ddbj_gff/flatfile/cli.py` も同様）。主に `ddbj_mss_tools` の `gff2mss` サブツールから
+ライブラリとして利用されます。
 
 ## 前提
 
 | 項目 | 要件 |
 |---|---|
 | Python | **3.11 以上**（`pyproject.toml` の `requires-python = ">=3.11"`） |
-| uv | **推奨**（`uv.lock` で依存を固定管理している）。無い場合は pip でも可 |
+| uv | **推奨**。無い場合は pip でも可 |
 | git | 必須 |
 
 ## 新マシンへの取得（重要: git remote が無い）
@@ -18,6 +21,11 @@ CLI は持ちません（`ddbj_mss_tools` の `gff2mss` サブツールから利
 
 1. **ディレクトリごとコピー**（`.git` を含めて丸ごと転送。履歴も保持される） — 最も簡単
 2. **リモートを設定して push**（GitHub 等に空リポジトリを作成 → `git remote add origin <URL>` → `git push -u origin main`）してから新マシンで clone
+
+> **注記（`uv.lock`）**: `uv.lock` は `.gitignore` 対象で**追跡されていません**。方法1（ディレクトリ丸ごとコピー）では
+> ローカルの `uv.lock` も一緒に運ばれますが、方法2（push → clone）では含まれず、新マシンの `uv sync` は依存を
+> **その場で再解決**します（固定 lock には従いません）。依存は `biopython>=1.83` の1つのみのため実害は小さいです。
+> 再現性を厳密に固定したい場合は `.gitignore` から `uv.lock` を外して追跡してください。
 
 `ddbj_mss_tools` の `gff2mss` を開発する場合、両リポジトリを**同じ親ディレクトリに隣接**して置きます
 （`ddbj_mss_tools` 側が `../gff_submission` を editable 参照するため）:
@@ -34,7 +42,7 @@ CLI は持ちません（`ddbj_mss_tools` の `gff2mss` サブツールから利
 
 ```bash
 cd gff_submission
-uv sync            # uv.lock に従って依存 + dev グループ(pytest) を .venv に構築
+uv sync            # 依存 + dev グループ(pytest) を .venv に構築（uv.lock があればそれに従う。上記注記参照）
 ```
 
 ### pip を使う場合
