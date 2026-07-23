@@ -52,6 +52,7 @@ def protein_of(cds, ctx) -> str:
                                     "transl_except": excepts})
         return str(_translate.translate_cds_with_transl_except(sf, ctx.sequences[cds.spans[0].seqid]))
     coding, _ = coding_sequence(cds, ctx)
+    coding = coding[: len(coding) - len(coding) % 3]
     protein = str(Seq(coding).translate(table=int(table_id)))
     return protein[:-1] if protein.endswith("*") else protein
 
