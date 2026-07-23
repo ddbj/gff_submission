@@ -26,3 +26,10 @@ def render_candidates(cands: list[Candidate]) -> str:
     for c in cands:
         lines.append(f"  [{c.operation}] {c.feature_id} ({c.seqid}): {c.detail}")
     return "\n".join(lines) + "\n"
+
+
+def render_changes(changes: list) -> str:
+    lines = [f"repair: {len(changes)} change(s) applied"]
+    for c in changes:
+        lines.append(f"  [{c.action}] {c.target}: {c.message}")
+    return "\n".join(lines) + "\n"

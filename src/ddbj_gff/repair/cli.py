@@ -5,10 +5,9 @@ import sys
 
 from .. import parse
 from ..writer import write
-from ..normalize.report import NormalizationReport
 from .context import RepairContext
-from .registry import list_operations, REGISTRY
-from .report import candidates_to_json, render_candidates
+from .registry import list_operations, get_operation, REGISTRY
+from .report import candidates_to_json, render_candidates, render_changes
 from .driver import run_detect, run_apply, load_sequences, DEFAULT_ORDER
 
 
@@ -44,6 +43,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.detect:
         names = args.only.split(",") if args.only else None
         try:
+            ops = [get_operation(n) for n in names] if names else list_operations()
+            missing_seq = sorted(op.name for op in ops
+                                 if op.requires_sequence and ctx.sequences is None)
+            if missing_seq:
+                ap.error(f"operation(s) {', '.join(missing_seq)} require sequence data "
+                        f"(pass --fasta)")
             cands = run_detect(doc, ctx, names)
         except KeyError as e:
             ap.error(str(e).strip('"'))
@@ -57,6 +62,12 @@ def main(argv: list[str] | None = None) -> int:
         else:
             names = args.apply.split(",")
         try:
+            ops = [get_operation(n) for n in names]
+            missing_seq = sorted(op.name for op in ops
+                                 if op.requires_sequence and ctx.sequences is None)
+            if missing_seq:
+                ap.error(f"operation(s) {', '.join(missing_seq)} require sequence data "
+                        f"(pass --fasta)")
             changes = run_apply(doc, ctx, names)
         except KeyError as e:
             ap.error(str(e).strip('"'))
@@ -66,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
                 fh.write(out_text)
         else:
             sys.stdout.write(out_text)
-        report = NormalizationReport(applied=changes, unresolved=[]).render()
+        report = render_changes(changes)
         if args.report:
             with open(args.report, "w", encoding="ascii") as fh:
                 fh.write(report)

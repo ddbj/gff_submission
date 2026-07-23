@@ -41,3 +41,25 @@ def test_apply_unknown_operation_errors_cleanly():
     with pytest.raises(SystemExit) as exc:
         main(["--gff", GFF, "--fasta", FASTA, "--apply", "bogus-op", "--out", "/dev/null"])
     assert exc.value.code == 2
+
+
+def test_apply_sequence_op_without_fasta_errors():
+    with pytest.raises(SystemExit) as exc:
+        main(["--gff", GFF, "--apply", "internal-stop-to-misc", "--out", "/dev/null"])
+    assert exc.value.code == 2
+
+
+def test_detect_only_non_sequence_op_without_fasta_ok():
+    rc = main(["--gff", GFF, "--detect", "--only", "utr-absent-to-partial-mrna"])
+    assert rc == 0
+
+
+def test_apply_report_labeled_repair_not_normalization(tmp_path):
+    out = tmp_path / "out.gff3"
+    report = tmp_path / "report.txt"
+    rc = main(["--gff", GFF, "--fasta", FASTA, "--apply", "all",
+              "--out", str(out), "--report", str(report)])
+    assert rc == 0
+    text = report.read_text()
+    assert text.startswith("repair:")
+    assert "normalization:" not in text

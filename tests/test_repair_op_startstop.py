@@ -51,3 +51,18 @@ def test_apply_sets_end_range_on_cds():
 
 def test_requires_sequence_flag():
     assert get_operation("missing-start-stop-to-partial-cds").requires_sequence is True
+
+
+def test_no_false_three_prime_partial_when_inframe_stop_with_trailing_base():
+    # CDS 1..10 on + strand. Sequence ATGAAATAAG -> in-frame codons ATG AAA TAA
+    # plus a trailing base G past the stop. Starts with ATG (start codon) and
+    # ends in-frame with TAA (stop codon) -> COMPLETE; must not be flagged 3'-partial.
+    gff = HDR + "\n".join([
+        "s\tsrc\tgene\t1\t10\t.\t+\t.\tID=g2;locus_tag=X_0002",
+        "s\tsrc\tmRNA\t1\t10\t.\t+\t.\tID=m2;Parent=g2",
+        "s\tsrc\tCDS\t1\t10\t.\t+\t0\tID=c2;Parent=m2;transl_table=1",
+    ]) + "\n"
+    doc = parse(gff)
+    ctx = RepairContext(sequences={"s": Seq("ATGAAATAAG")}, transl_table=1)
+    op = get_operation("missing-start-stop-to-partial-cds")
+    assert op.detect(doc, ctx) == []

@@ -86,8 +86,9 @@ def _detect_startstop(doc, ctx: RepairContext) -> list[Candidate]:
         coding, table = coding_sequence(f, ctx)
         codon_start = f.codon_start or 1
         strand = f.spans[0].strand
-        first = coding[:3]
-        last = coding[-3:]
+        coding_full = coding[: len(coding) - len(coding) % 3]  # whole in-frame codons only
+        first = coding_full[:3]
+        last = coding_full[-3:] if len(coding_full) >= 3 else ""
         five = codon_start > 1 or len(first) < 3 or first not in table.start_codons
         three = len(last) < 3 or last not in table.stop_codons
         if not (five or three):
