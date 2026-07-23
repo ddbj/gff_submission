@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from ..model import GffDocument
+from ..normalize.report import Change
 from .context import RepairContext
 from .report import Candidate
 
@@ -14,7 +15,7 @@ class Operation:
     summary: str
     requires_sequence: bool
     detect: Callable[[GffDocument, RepairContext], list[Candidate]]
-    apply: Callable[[GffDocument, RepairContext, "list[Candidate] | None"], list]
+    apply: Callable[[GffDocument, RepairContext, "list[Candidate] | None"], list[Change]]
 
 
 REGISTRY: dict[str, Operation] = {}
