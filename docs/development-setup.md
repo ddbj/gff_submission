@@ -3,8 +3,8 @@
 `gff_submission`（Python パッケージ名 **`ddbj-gff`** / import 名 `ddbj_gff`）の開発環境を
 新しいマシンで再構築するための手順。本リポジトリは GFF3 正規化・パース等を提供する**ライブラリ**です。
 console-script（`pip` でインストールされる実行コマンド。`[project.scripts]`）は持ちませんが、
-`python -m ddbj_gff.normalize` / `python -m ddbj_gff.validate` のモジュール CLI があります
-（`src/ddbj_gff/flatfile/cli.py` も同様）。主に `ddbj_mss_tools` の `gff2mss` サブツールから
+`python -m ddbj_gff.normalize` / `python -m ddbj_gff.validate` / `python -m ddbj_gff.repair` のモジュール CLI があります
+（`src/ddbj_gff/flatfile/cli.py` も同様。repair は段階的なキュレーション操作を提供）。主に `ddbj_mss_tools` の `gff2mss` サブツールから
 ライブラリとして利用されます。
 
 ## 前提

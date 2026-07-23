@@ -52,12 +52,25 @@ python -m ddbj_gff.normalize \
 python -m ddbj_gff.validate --gff normalized.gff3
 python -m ddbj_gff.validate --gff normalized.gff3 --severity SO0001=warning
 
+# GFF repair / curation: 段階的なキュレーション操作
+python -m ddbj_gff.repair --list
+python -m ddbj_gff.repair --gff normalized.gff3 --fasta genome.fa --detect --json
+python -m ddbj_gff.repair --gff normalized.gff3 --fasta genome.fa --apply all --out curated.gff3
+
 # DDBJ フラットファイル → 正準 GFF3
 python -m ddbj_gff.flatfile.cli --in record.gbk --out record.gff3
 ```
 
+repair は、個別に呼び出せるキュレーション操作を提供します。`--list` で一覧、`--detect` で適用対象をプレビュー（JSON 出力可）してから `--apply` で選択実行：
+- **`internal-stop-to-misc`**: 内部停止コドンを持つ CDS → `misc_feature` へ型変更
+- **`utr-absent-to-partial-mrna`**: UTR が欠落している mRNA → 部分的（partial）と標記
+- **`missing-start-stop-to-partial-cds`**: 開始・終止コドンが欠落している CDS → 部分的と標記
+
+部分性は INSDC 形式（`partial=true` + `start_range`/`end_range`）で記録します。
+
 `normalize` の主なオプション: `--gff`(必須) `--fasta` `--config` `--taxid` `--transl-table`
 `--insdc-gff-version` `--out` `--report`。`validate`: `--gff`(必須) `--severity CODE=LEVEL`(繰り返し可)。
+`repair`: `--gff`(必須) `--fasta` `--transl-table` `--detect` `--json` `--only` `--apply` `--out` `--report`。
 
 ### ライブラリ API
 
