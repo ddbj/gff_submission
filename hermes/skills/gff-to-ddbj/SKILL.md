@@ -36,7 +36,7 @@ Resolve executables from Hermes config (defaults are for the NIG/DDBJ cluster):
 - `VALIDATOR = ${skills.config.gff_to_ddbj.validator_dir}/ddbj-validator`
 
 Inputs you must have: the GFF3, the genome FASTA, and — for `gff2mss` — an mss-config TOML
-and a common metadata file (JSON or TSV); optionally a `sequence_roles.tsv` (organelle
+and a common metadata JSON file; optionally a `sequence_roles.tsv` (organelle
 topology) and a `product_map.tsv`. See `references/gff2mss.md`.
 
 Outputs: `norm.gff` (normalized), `repaired.gff` (curated), `submission/NAME.ann` +
@@ -61,14 +61,14 @@ detect-only preview and the validator step, which stay manual).
    - Apply chosen ops (or all): `$PY -m ddbj_gff.repair --gff norm.gff --fasta GENOME.fa --apply all --out repaired.gff --report repair.txt`
    Ops: `internal-stop-to-misc` (CDS with internal stop → `misc_feature`), `utr-absent-to-partial-mrna`, `missing-start-stop-to-partial-cds`. `internal-stop-to-misc` applies first.
 4. **gff2mss** — convert to MSS:
-   `$GFF2MSS --gff repaired.gff --fasta GENOME.fa --mss-config MSS.toml --common COMMON.(json|tsv) --out submission/NAME`
+   `$GFF2MSS --gff repaired.gff --fasta GENOME.fa --mss-config MSS.toml --common COMMON.json --out submission/NAME`
    (add `--sequence-roles roles.tsv` for organelle topology; `--locus-tag-start N` to continue numbering).
 5. **Validate the MSS** — final check (see `references/validator.md`):
    `$VALIDATOR ddbj submission -o submission/out -f -j 1`
    For a large (GB-scale) genome, run this in the background, not a foreground timeout, and always pass `-f` in a non-TTY shell.
 
 Steps 1–4 for the happy path:
-`scripts/gff_to_ddbj.sh --gff IN.gff --fasta GENOME.fa --mss-config MSS.toml --common COMMON.tsv --out-prefix submission/NAME --workdir work`
+`scripts/gff_to_ddbj.sh --gff IN.gff --fasta GENOME.fa --mss-config MSS.toml --common COMMON.json --out-prefix submission/NAME --workdir work`
 
 ## Pitfalls
 
