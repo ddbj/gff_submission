@@ -1,4 +1,5 @@
 import os
+import pytest
 from ddbj_gff.repair.cli import main
 from ddbj_gff import parse
 from ddbj_gff.validate import validate
@@ -34,3 +35,9 @@ def test_apply_writes_curated_gff_that_validates(tmp_path):
     assert doc.feature_index["c1"].type == "misc_feature"
     after = {d.code for d in validate(doc) if d.severity.name == "ERROR"}
     assert after <= before   # repair introduced no new validation ERROR
+
+
+def test_apply_unknown_operation_errors_cleanly():
+    with pytest.raises(SystemExit) as exc:
+        main(["--gff", GFF, "--fasta", FASTA, "--apply", "bogus-op", "--out", "/dev/null"])
+    assert exc.value.code == 2

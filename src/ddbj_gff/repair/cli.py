@@ -43,7 +43,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.detect:
         names = args.only.split(",") if args.only else None
-        cands = run_detect(doc, ctx, names)
+        try:
+            cands = run_detect(doc, ctx, names)
+        except KeyError as e:
+            ap.error(str(e).strip('"'))
         sys.stdout.write(candidates_to_json(cands) + "\n" if args.json
                          else render_candidates(cands))
         return 0
@@ -53,7 +56,10 @@ def main(argv: list[str] | None = None) -> int:
             names = [n for n in DEFAULT_ORDER if n in REGISTRY]
         else:
             names = args.apply.split(",")
-        changes = run_apply(doc, ctx, names)
+        try:
+            changes = run_apply(doc, ctx, names)
+        except KeyError as e:
+            ap.error(str(e).strip('"'))
         out_text = write(doc)
         if args.out:
             with open(args.out, "w", encoding="ascii") as fh:
