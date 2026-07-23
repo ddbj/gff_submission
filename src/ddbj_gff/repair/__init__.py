@@ -15,3 +15,6 @@ __all__ = ["RepairContext", "Operation", "REGISTRY", "register", "get_operation"
            "list_operations", "Candidate", "candidates_to_json", "render_candidates"]
 
 from . import operations as _operations  # noqa: E402,F401  (populates REGISTRY)
+from .driver import run_detect, run_apply, load_sequences, DEFAULT_ORDER  # noqa: E402
+
+__all__ += ["run_detect", "run_apply", "load_sequences", "DEFAULT_ORDER"]
